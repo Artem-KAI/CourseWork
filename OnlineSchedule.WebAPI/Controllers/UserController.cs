@@ -1,0 +1,83 @@
+﻿using CONTRACT.DTO;
+
+using Microsoft.AspNetCore.Mvc;
+
+using BLL.Interfaces;
+using WebAPI.Models;
+
+namespace WebAPI.Controllers
+{
+    [ApiController]
+    [Route("api/users")]
+    public class UserController : ControllerBase
+    {
+        private readonly IUserManager userManager;
+        private readonly ICredentialManager credentialManager;
+
+        public UserController(
+            IUserManager userManager,
+            ICredentialManager credentialManager)
+        {
+            this.userManager = userManager;
+            this.credentialManager = credentialManager;
+        }
+
+        private async Task<bool> IsAdmin()
+        {
+            if (!Request.Headers.TryGetValue("X-User-Id", out var value))
+                return false;
+
+            if (!int.TryParse(value, out int userId))
+                return false;
+
+            var users = await userManager.GetAllUsersAsync();
+            var user = users.FirstOrDefault(x => x.Id == userId);
+
+            return user?.Role == "Admin";
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IReadOnlyCollection<UserInfo>>> GetAll()
+        {
+            return Ok(await userManager.GetAllUsersAsync());
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<UserInfo>> Get(int id)
+        {
+            var user = await userManager.GetUserByIdAsync(id);
+
+            if (user == null)
+                return NotFound();
+
+            return Ok(user);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult> Update(int id, UpdateUserRequests request)
+        {
+            if (!await IsAdmin())
+                return Forbid();
+
+            await userManager
+                .UpdateUserAsync(
+                id,
+                request.Username,
+                request.Email,
+                request.Role);
+
+            return Ok();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> Delete(int id)
+        {
+            if (!await IsAdmin())
+                return Forbid();
+
+            await userManager.DeleteUserAsync(id);
+
+            return Ok();
+        }
+    }
+}
