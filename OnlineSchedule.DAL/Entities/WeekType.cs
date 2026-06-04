@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace DAL.Entities;
 
-namespace OnlineSchedule.DAL.Entities
+public enum WeekType
 {
-    internal class Weektype
-    {
-    }
+    Both = 0,
+    Odd = 1,
+    Even = 2
 }

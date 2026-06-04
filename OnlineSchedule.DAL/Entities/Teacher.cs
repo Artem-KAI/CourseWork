@@ -1,12 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace DAL.Entities;
 
-namespace OnlineSchedule.DAL.Entities
+public class Teacher
 {
-    internal class Teacher
-    {
-    }
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Degree { get; set; } 
+
+    public int DepartmentId { get; set; }
+    public virtual Department? Department { get; set; }
+
+    public int? UserId { get; set; }
+    public virtual User? User { get; set; }
+
+    public virtual ICollection<ScheduleItem> ScheduleItems { get; set; }
 }
