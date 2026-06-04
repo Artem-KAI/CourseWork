@@ -8,9 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CONTRACT\CONTRACT.csproj" />
-    <ProjectReference Include="..\OnlineSchedule.BLL\OnlineSchedule.BLL.csproj" />
-    <ProjectReference Include="..\OnlineSchedule.DAL\OnlineSchedule.DAL.csproj" />
+    <PackageReference Include="AutoMapper" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OnlineSchedule.WebAPI\OnlineSchedule.WebAPI.csproj" />
   </ItemGroup>
 
 </Project>
