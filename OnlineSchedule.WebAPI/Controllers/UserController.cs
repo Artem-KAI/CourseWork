@@ -12,14 +12,9 @@ namespace WebAPI.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserManager userManager;
-        private readonly ICredentialManager credentialManager;
-
-        public UserController(
-            IUserManager userManager,
-            ICredentialManager credentialManager)
+        public UserController(IUserManager userManager)
         {
             this.userManager = userManager;
-            this.credentialManager = credentialManager;
         }
 
         private async Task<bool> IsAdmin()

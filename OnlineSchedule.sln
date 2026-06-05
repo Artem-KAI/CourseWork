@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36616.10
+# Visual Studio Version 18
+VisualStudioVersion = 18.6.11822.322 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineSchedule.BLL", "OnlineSchedule.BLL\OnlineSchedule.BLL.csproj", "{BA960D61-F819-406D-83BC-0F808E3FF082}"
 EndProject
@@ -9,9 +9,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineSchedule.DAL", "Onlin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineSchedule.WebAPI", "OnlineSchedule.WebAPI\OnlineSchedule.WebAPI.csproj", "{69ADE68E-B5DC-48E1-961C-35794D58DDDB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineSchedule.UI", "OnlineSchedule.UI\OnlineSchedule.UI.csproj", "{19AED7F0-6973-4E3A-8FAA-9F0F66F52DFA}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CONTRACT", "CONTRACT\CONTRACT.csproj", "{7049E4AF-186C-46FB-AADF-B173307C23B3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineSchedule.UI", "OnlineSchedule.UI\OnlineSchedule.UI.csproj", "{0205D1C8-DFE9-4451-BF3A-55AE4A909342}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,14 +31,14 @@ Global
 		{69ADE68E-B5DC-48E1-961C-35794D58DDDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{69ADE68E-B5DC-48E1-961C-35794D58DDDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{69ADE68E-B5DC-48E1-961C-35794D58DDDB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{19AED7F0-6973-4E3A-8FAA-9F0F66F52DFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{19AED7F0-6973-4E3A-8FAA-9F0F66F52DFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{19AED7F0-6973-4E3A-8FAA-9F0F66F52DFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{19AED7F0-6973-4E3A-8FAA-9F0F66F52DFA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7049E4AF-186C-46FB-AADF-B173307C23B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7049E4AF-186C-46FB-AADF-B173307C23B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7049E4AF-186C-46FB-AADF-B173307C23B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7049E4AF-186C-46FB-AADF-B173307C23B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0205D1C8-DFE9-4451-BF3A-55AE4A909342}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0205D1C8-DFE9-4451-BF3A-55AE4A909342}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0205D1C8-DFE9-4451-BF3A-55AE4A909342}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0205D1C8-DFE9-4451-BF3A-55AE4A909342}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
