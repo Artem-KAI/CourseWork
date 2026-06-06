@@ -1,5 +1,309 @@
 ﻿@page "/schedule"
+@rendermode @(new InteractiveServerRenderMode())
 
-<h3>Schedule</h3>
+@using CONTRACT.DTO
 
-<p>Schedule subsystem.</p>
+@inject ApiScheduleService ScheduleService
+@inject UserSessionService Session
+@inject NavigationManager Navigation
+
+<PageTitle>Schedule</PageTitle>
+
+<h2>Schedule</h2>
+
+@if (!Session.IsAuthenticated)
+{
+    <div class="alert alert-danger">
+        Access denied. Please login.
+    </div>
+
+    <button class="btn btn-primary"
+            @onclick="GoLogin">
+        Login
+    </button>
+}
+else
+{
+    <div class="mb-3">
+
+        <h5>
+            User:
+            @Session.CurrentUser?.Username
+        </h5>
+
+        <h6>
+            Role:
+            @Session.CurrentUser?.Role
+        </h6>
+
+    </div>
+
+    <div class="mb-3">
+
+        <button class="btn btn-secondary"
+                @onclick="Logout">
+            Logout
+        </button>
+
+    </div>
+
+    <hr />
+
+    @if (CanUseGroupFilter)
+    {
+        <div class="mb-3">
+
+            <label>Group</label>
+
+            <select class="form-select"
+                    @bind="SelectedGroupId">
+
+                <option value="0">
+                    Select group
+                </option>
+
+                @foreach (var group in Groups)
+                {
+                    <option value="@group.Id">
+                        @group.Name
+                    </option>
+                }
+
+            </select>
+
+            <button class="btn btn-primary mt-2"
+                    @onclick="LoadGroupSchedule">
+                Load
+            </button>
+
+        </div>
+    }
+
+    @if (CanUseTeacherFilter)
+    {
+        <div class="mb-3">
+
+            <label>Teacher</label>
+
+            <select class="form-select"
+                    @bind="SelectedTeacherId">
+
+                <option value="0">
+                    Select teacher
+                </option>
+
+                @foreach (var teacher in Teachers)
+                {
+                    <option value="@teacher.Id">
+                        @teacher.Name
+                    </option>
+                }
+
+            </select>
+
+            <button class="btn btn-primary mt-2"
+                    @onclick="LoadTeacherSchedule">
+                Load
+            </button>
+
+        </div>
+    }
+
+    @if (CanUseClassroomFilter)
+    {
+        <div class="mb-3">
+
+            <label>Classroom</label>
+
+            <select class="form-select"
+                    @bind="SelectedClassroomId">
+
+                <option value="0">
+                    Select classroom
+                </option>
+
+                @foreach (var classroom in Classrooms)
+                {
+                    <option value="@classroom.Id">
+                        @classroom.Name
+                    </option>
+                }
+
+            </select>
+
+            <button class="btn btn-primary mt-2"
+                    @onclick="LoadClassroomSchedule">
+                Load
+            </button>
+
+        </div>
+    }
+
+    @if (CanUseDepartmentFilter)
+    {
+        <div class="mb-3">
+
+            <label>Department</label>
+
+            <select class="form-select"
+                    @bind="SelectedDepartmentId">
+
+                <option value="0">
+                    Select department
+                </option>
+
+                @foreach (var department in Departments)
+                {
+                    <option value="@department.Id">
+                        @department.Name
+                    </option>
+                }
+
+            </select>
+
+            <button class="btn btn-primary mt-2"
+                    @onclick="LoadDepartmentSchedule">
+                Load
+            </button>
+
+        </div>
+    }
+
+    <hr />
+
+    @if (ScheduleItems.Any())
+    {
+        <table class="table table-bordered">
+
+            <thead>
+
+            <tr>
+                <th>Day</th>
+                <th>Lesson</th>
+                <th>Group</th>
+                <th>Teacher</th>
+                <th>Discipline</th>
+                <th>Classroom</th>
+                <th>Week</th>
+            </tr>
+
+            </thead>
+
+            <tbody>
+
+            @foreach (var item in ScheduleItems)
+            {
+                <tr>
+
+                    <td>@item.DayOfWeek</td>
+                    <td>@item.LessonNumber</td>
+                    <td>@item.GroupName</td>
+                    <td>@item.TeacherName</td>
+                    <td>@item.DisciplineName</td>
+                    <td>@item.ClassroomName</td>
+                    <td>@item.WeekType</td>
+
+                </tr>
+            }
+
+            </tbody>
+
+        </table>
+    }
+}
+
+@code
+{
+    private List<GroupInfo> Groups = new();
+    private List<TeacherInfo> Teachers = new();
+    private List<ClassroomInfo> Classrooms = new();
+    private List<DepartmentInfo> Departments = new();
+
+    private List<ScheduleItemInfo> ScheduleItems = new();
+
+    private int SelectedGroupId;
+    private int SelectedTeacherId;
+    private int SelectedClassroomId;
+    private int SelectedDepartmentId;
+
+    private bool CanUseGroupFilter =>
+        Session.IsStudent ||
+        Session.IsTeacher ||
+        Session.IsManagement ||
+        Session.IsEditor ||
+        Session.IsAdmin;
+
+    private bool CanUseTeacherFilter =>
+        Session.IsTeacher ||
+        Session.IsManagement ||
+        Session.IsEditor ||
+        Session.IsAdmin;
+
+    private bool CanUseClassroomFilter =>
+        Session.IsManagement ||
+        Session.IsEditor ||
+        Session.IsAdmin;
+
+    private bool CanUseDepartmentFilter =>
+        Session.IsManagement ||
+        Session.IsEditor ||
+        Session.IsAdmin;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Session.IsAuthenticated)
+            return;
+
+        if (CanUseGroupFilter)
+            Groups = await ScheduleService.GetGroupsAsync();
+
+        if (CanUseTeacherFilter)
+            Teachers = await ScheduleService.GetTeachersAsync();
+
+        if (CanUseClassroomFilter)
+            Classrooms = await ScheduleService.GetClassroomsAsync();
+
+        if (CanUseDepartmentFilter)
+            Departments = await ScheduleService.GetDepartmentsAsync();
+    }
+
+    private async Task LoadGroupSchedule()
+    {
+        ScheduleItems =
+            await ScheduleService.GetScheduleForGroupAsync(
+                SelectedGroupId);
+    }
+
+    private async Task LoadTeacherSchedule()
+    {
+        ScheduleItems =
+            await ScheduleService.GetScheduleForTeacherAsync(
+                SelectedTeacherId);
+    }
+
+    private async Task LoadClassroomSchedule()
+    {
+        ScheduleItems =
+            await ScheduleService.GetScheduleForClassroomAsync(
+                SelectedClassroomId);
+    }
+
+    private async Task LoadDepartmentSchedule()
+    {
+        ScheduleItems =
+            await ScheduleService.GetScheduleForDepartmentAsync(
+                SelectedDepartmentId);
+    }
+
+    private void Logout()
+    {
+        Session.Logout();
+
+        Navigation.NavigateTo("/");
+    }
+
+    private void GoLogin()
+    {
+        Navigation.NavigateTo("/login");
+    }
+}

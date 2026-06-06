@@ -1,5 +1,15 @@
 ﻿@page "/admin"
 
-<h3>Administration</h3>
+@inject UserSessionService Session
+@inject NavigationManager Navigation
 
-<p>Schedule creation subsystem.</p>
+@code {
+
+    protected override void OnInitialized()
+    {
+        if (!Session.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+}

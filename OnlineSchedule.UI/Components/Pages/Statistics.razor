@@ -1,5 +1,15 @@
 ﻿@page "/statistics"
 
-<h3>Statistics</h3>
+@inject UserSessionService Session
+@inject NavigationManager Navigation
 
-<p>Statistics subsystem.</p>
+@code {
+
+    protected override void OnInitialized()
+    {
+        if (!Session.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+}

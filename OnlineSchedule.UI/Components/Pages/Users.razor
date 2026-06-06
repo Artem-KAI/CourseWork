@@ -1,5 +1,15 @@
 ﻿@page "/users"
 
-<h3>Users</h3>
+@inject UserSessionService Session
+@inject NavigationManager Navigation
 
-<p>Users management subsystem.</p>
+@code {
+
+    protected override void OnInitialized()
+    {
+        if (!Session.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+}

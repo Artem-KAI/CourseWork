@@ -46,7 +46,7 @@ namespace UI.Services
                 ("api/schedule/teachers") ?? new();
         }
 
-        public async Task<List<ClassroomInfo>> GetClassroonsAsync()
+        public async Task<List<ClassroomInfo>> GetClassroomsAsync()
         {
             var client = CreateClient();
 
@@ -71,7 +71,7 @@ namespace UI.Services
         }
 
         public async Task<List<ScheduleItemInfo>>
-            GetScheduleByGroupAsync(int groupId)
+            GetScheduleForGroupAsync(int groupId)
         {
             var client = CreateClient();
 
@@ -80,7 +80,7 @@ namespace UI.Services
         }
 
         public async Task<List<ScheduleItemInfo>>
-            GetScheduleByTeacherAsync(int teacherId)
+            GetScheduleForTeacherAsync(int teacherId)
         {
             var client = CreateClient();
 
@@ -89,7 +89,7 @@ namespace UI.Services
         }
 
         public async Task<List<ScheduleItemInfo>>
-            GetScheduleByClassroomAsync(int classroomId)
+            GetScheduleForClassroomAsync(int classroomId)
         {
             var client = CreateClient();
 
@@ -98,7 +98,7 @@ namespace UI.Services
         }
 
         public async Task<List<ScheduleItemInfo>>
-            GetScheduleByDepartmentAsync(int departmentId)
+            GetScheduleForDepartmentAsync(int departmentId)
         {
             var client = CreateClient();
 
