@@ -2,6 +2,8 @@
 
 using BLL.Interfaces;
 using BLL.Services;
+using DAL.EF;
+using DAL.Interfaces;
 
 namespace WebAPI.Infrastructure
 {
@@ -9,6 +11,10 @@ namespace WebAPI.Infrastructure
     {
         protected override void Load(ContainerBuilder builder)
         {
+            builder.RegisterType<DataStore>()
+                .As<IDataStore>()
+                .InstancePerLifetimeScope();
+
             builder.RegisterType<CredentialManager>()
                 .As<ICredentialManager>()
                 .InstancePerLifetimeScope();
