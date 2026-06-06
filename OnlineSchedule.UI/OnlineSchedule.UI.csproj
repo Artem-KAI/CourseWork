@@ -10,8 +10,4 @@
     <ProjectReference Include="..\CONTRACT\CONTRACT.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Components\Pages\" />
-  </ItemGroup>
-
 </Project>

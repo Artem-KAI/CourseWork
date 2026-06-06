@@ -1,0 +1,78 @@
+﻿@page "/"
+@rendermode @(new InteractiveServerRenderMode())
+
+@inject UserSessionService Session
+@inject NavigationManager Navigation
+
+<PageTitle>Electronic Schedule</PageTitle>
+
+<div class="container mt-5">
+
+    <div class="text-center">
+
+        <h1>Electronic Schedule System</h1>
+
+        <p>
+            University Schedule Management System
+        </p>
+
+        @if (!Session.IsAuthenticated)
+        {
+            <div class="mt-4">
+
+                <button class="btn btn-primary me-2"
+                        @onclick="GoToLogin">
+                    Login
+                </button>
+
+                <button class="btn btn-success"
+                        @onclick="GoToRegister">
+                    Register
+                </button>
+
+            </div>
+        }
+        else
+        {
+            <div class="mt-4">
+
+                <h4>
+                    Welcome,
+                    @Session.CurrentUser?.Username
+                </h4>
+
+                <p>
+                    Role:
+                    @Session.CurrentUser?.Role
+                </p>
+
+                <button class="btn btn-primary"
+                        @onclick="GoToDashboard">
+                    Open System
+                </button>
+
+            </div>
+        }
+
+    </div>
+
+</div>
+
+@code {
+
+    private void GoToLogin()
+    {
+        Navigation.NavigateTo("/login");
+    }
+
+    private void GoToRegister()
+    {
+        Navigation.NavigateTo("/register");
+    }
+
+    private void GoToDashboard()
+    {
+        Navigation.NavigateTo("/schedule");
+    }
+
+}

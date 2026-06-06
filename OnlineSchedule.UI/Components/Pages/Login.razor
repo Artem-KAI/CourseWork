@@ -1,0 +1,66 @@
+﻿@page "/login"
+
+@using global::UI.Models
+
+@inject ApiAuthService AuthService
+@inject UserSessionService Session
+@inject NavigationManager Navigation
+
+<h3>Вхід у систему</h3>
+
+<div class="mb-3">
+    <label>Email</label>
+
+    <input class="form-control"
+           @bind="Model.Email" />
+</div>
+
+<div class="mb-3">
+    <label>Password</label>
+
+    <input type="password"
+           class="form-control"
+           @bind="Model.Password" />
+</div>
+
+<button class="btn btn-primary"
+        @onclick="LoginUser">
+    Login
+</button>
+
+@if (!string.IsNullOrWhiteSpace(Error))
+{
+    <div class="alert alert-danger mt-3">
+        @Error
+    </div>
+}
+
+@code
+{
+    private LoginRequest Model = new();
+
+    private string Error = "";
+
+    private async Task LoginUser()
+    {
+        try
+        {
+            var user = await AuthService.LoginAsync(Model);
+
+            if (user != null)
+            {
+                Session.SetUser(user);
+
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                Error = "Incorrect username or password";
+            }
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+}
