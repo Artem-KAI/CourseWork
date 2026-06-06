@@ -12,9 +12,9 @@ builder.Services.AddHttpClient("ScheduleAPI", client =>
 });
 
 builder.Services.AddScoped<ApiAuthService>();
-//builder.Services.AddScoped<ApiScheduleService>();
-//builder.Services.AddScoped<ApiStatisticsService>();
-//builder.Services.AddScoped<ApiUserService>();
+builder.Services.AddScoped<ApiScheduleService>();
+builder.Services.AddScoped<ApiStatisticsService>();
+builder.Services.AddScoped<ApiUserService>();
 
 builder.Services.AddScoped<UserSessionService>();
 
