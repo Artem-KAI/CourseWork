@@ -78,8 +78,24 @@ else
 
         </div>
     }
+    @if (Session.IsTeacher)
+    {
+        <div class="mb-3">
 
-    @if (CanUseTeacherFilter)
+            <label>Teacher</label>
+
+            <input class="form-control"
+                   value="@CurrentTeacher?.Name"
+                   readonly />
+
+            <button class="btn btn-primary mt-2"
+                    @onclick="LoadTeacherSchedule">
+                Load my schedule
+            </button>
+
+        </div>
+    }
+    else if (CanUseTeacherFilter)
     {
         <div class="mb-3">
 
@@ -239,6 +255,8 @@ else
     private int SelectedClassroomId;
     private int SelectedDepartmentId;
 
+    private TeacherInfo? CurrentTeacher;
+
     private string ErrorMessage = "";
 
     private bool CanUseGroupFilter =>
@@ -273,8 +291,16 @@ else
             Groups = await ScheduleService.GetGroupsAsync();
 
         if (CanUseTeacherFilter)
+        {
             Teachers = await ScheduleService.GetTeachersAsync();
 
+            if (Session.IsTeacher && Teachers.Any())
+            {
+                CurrentTeacher = Teachers.First();
+
+                SelectedTeacherId = CurrentTeacher.Id;
+            }
+        }
         if (CanUseClassroomFilter)
             Classrooms = await ScheduleService.GetClassroomsAsync();
 

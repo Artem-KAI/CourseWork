@@ -328,8 +328,15 @@ public sealed class ScheduleManager : IScheduleManager
     /// </summary>
     public async Task<IReadOnlyCollection<TeacherInfo>> GetAllTeachersAsync(int currentUserId)
     {
-        await GetAndValidateUserAsync(currentUserId);
+        var user = await GetAndValidateUserAsync(currentUserId);
         var teachers = await _store.Teachers.GetAllAsync();
+        if (user.Role == "Teacher")
+        {
+            teachers = teachers
+                .Where(t => t.UserId == user.Id)
+                .ToList();
+        }
+
         return _mapper.Map<IReadOnlyCollection<TeacherInfo>>(teachers);
     }
 
