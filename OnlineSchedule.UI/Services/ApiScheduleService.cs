@@ -1,5 +1,7 @@
-﻿using System.Net.Http.Json;
-using CONTRACT.DTO;
+﻿using CONTRACT.DTO;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace UI.Services
 {
@@ -30,79 +32,82 @@ namespace UI.Services
             return client;
         }
 
-        public async Task<List<GroupInfo>> GetGroupsAsync()
+        private readonly JsonSerializerOptions jsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters =
+            {
+                new JsonStringEnumConverter()
+            }
+        };
+
+        private async Task<T?> GetAsync<T>(string url)
         {
             var client = CreateClient();
 
-            return await client.GetFromJsonAsync<List<GroupInfo>>
+            var response = await client.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+                return default;
+
+            return await response.Content
+                .ReadFromJsonAsync<T>(jsonOptions);
+        }
+
+        public async Task<List<GroupInfo>> GetGroupsAsync()
+        {
+            return await GetAsync<List<GroupInfo>>
                 ("api/schedule/groups") ?? new();
         }
 
         public async Task<List<TeacherInfo>> GetTeachersAsync()
         {
-            var client = CreateClient();
-
-            return await client.GetFromJsonAsync<List<TeacherInfo>>
+            return await GetAsync<List<TeacherInfo>>
                 ("api/schedule/teachers") ?? new();
         }
 
         public async Task<List<ClassroomInfo>> GetClassroomsAsync()
         {
-            var client = CreateClient();
-
-            return await client.GetFromJsonAsync<List<ClassroomInfo>>
+            return await GetAsync<List<ClassroomInfo>>
                 ("api/schedule/classrooms") ?? new();
         }
 
         public async Task<List<DepartmentInfo>> GetDepartmentsAsync()
         {
-            var client = CreateClient();
-
-            return await client.GetFromJsonAsync<List<DepartmentInfo>>
+            return await GetAsync<List<DepartmentInfo>>
                 ("api/schedule/departments") ?? new();
         }
 
         public async Task<List<DisciplineInfo>> GetDisciplinesAsync()
         {
-            var client = CreateClient();
-
-            return await client.GetFromJsonAsync<List<DisciplineInfo>>
+            return await GetAsync<List<DisciplineInfo>>
                 ("api/schedule/disciplines") ?? new();
         }
 
         public async Task<List<ScheduleItemInfo>>
             GetScheduleForGroupAsync(int groupId)
         {
-            var client = CreateClient();
-
-            return await client.GetFromJsonAsync<List<ScheduleItemInfo>>
+            return await GetAsync<List<ScheduleItemInfo>>
                 ($"api/schedule/group/{groupId}") ?? new();
         }
 
         public async Task<List<ScheduleItemInfo>>
             GetScheduleForTeacherAsync(int teacherId)
         {
-            var client = CreateClient();
-
-            return await client.GetFromJsonAsync<List<ScheduleItemInfo>>
+            return await GetAsync<List<ScheduleItemInfo>>
                 ($"api/schedule/teacher/{teacherId}") ?? new();
         }
 
         public async Task<List<ScheduleItemInfo>>
             GetScheduleForClassroomAsync(int classroomId)
         {
-            var client = CreateClient();
-
-            return await client.GetFromJsonAsync<List<ScheduleItemInfo>>
+            return await GetAsync<List<ScheduleItemInfo>>
                 ($"api/schedule/classroom/{classroomId}") ?? new();
         }
 
         public async Task<List<ScheduleItemInfo>>
             GetScheduleForDepartmentAsync(int departmentId)
         {
-            var client = CreateClient();
-
-            return await client.GetFromJsonAsync<List<ScheduleItemInfo>>
+            return await GetAsync<List<ScheduleItemInfo>>
                 ($"api/schedule/department/{departmentId}") ?? new();
         }
     }
