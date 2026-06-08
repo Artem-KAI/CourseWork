@@ -49,6 +49,14 @@ else
 
     <hr />
 
+    @if (Session.IsAdmin || Session.IsEditor)
+    {
+        <button class="btn btn-success ms-2"
+                @onclick="OpenEditor">
+            Schedule editor
+        </button>
+    }
+
     @if (CanUseGroupFilter)
     {
         <div class="mb-3">
@@ -373,6 +381,11 @@ else
         Session.Logout();
 
         Navigation.NavigateTo("/");
+    }
+
+    private void OpenEditor()
+    {
+        Navigation.NavigateTo("/schedule-editor");
     }
 
     private void GoLogin()

@@ -39,7 +39,12 @@ public interface IScheduleManager
     /// Отримує окремий елемент розкладу за його ідентифікатором.
     /// </summary>
     Task<ScheduleItemInfo> GetScheduleItemByIdAsync(int currentUserId, int itemId);
-    
+
+    /// <summary>
+    /// Отримує весь розклад. Використовується редактором розкладу.
+    /// </summary>
+    Task<IReadOnlyCollection<ScheduleItemInfo>> GetAllScheduleItemsAsync(int currentUserId);
+
     /// <summary>
     /// Додає нове заняття в розклад із перевіркою конфліктів часу та ресурсів.
     /// </summary>

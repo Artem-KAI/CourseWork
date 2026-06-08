@@ -171,6 +171,22 @@ namespace WebAPI.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<ActionResult<IReadOnlyCollection<ScheduleItemInfo>>> GetAll()
+        {
+            try
+            {
+                var result = await scheduleManager
+                    .GetAllScheduleItemsAsync(CurrentUserId);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
+        }
+
         [HttpPost]
         public async Task<ActionResult> Create(CreateScheduleItemRequest request)
         {

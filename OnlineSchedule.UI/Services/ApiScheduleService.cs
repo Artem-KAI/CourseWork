@@ -112,6 +112,12 @@ namespace UI.Services
                 ($"api/schedule/department/{departmentId}") ?? new();
         }
 
+        public async Task<List<ScheduleItemInfo>> GetAllScheduleItemsAsync()
+        {
+            return await GetAsync<List<ScheduleItemInfo>>
+                ("api/schedule") ?? new();
+        }
+
         // Methods for Editor
         public async Task<ScheduleItemInfo?> GetScheduleItemByIdAsync(int id)
         {
