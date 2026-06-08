@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using UI.Models;
 
 namespace UI.Services
 {
@@ -109,6 +110,47 @@ namespace UI.Services
         {
             return await GetAsync<List<ScheduleItemInfo>>
                 ($"api/schedule/department/{departmentId}") ?? new();
+        }
+
+        // Methods for Editor
+        public async Task<ScheduleItemInfo?> GetScheduleItemByIdAsync(int id)
+        {
+            return await GetAsync<ScheduleItemInfo>(
+                $"api/schedule/{id}");
+        }
+
+        public async Task<bool> CreateScheduleItemAsync(CreateScheduleItemRequest request)
+        {
+            var client = CreateClient();
+
+            var response = await client.PostAsJsonAsync(
+                    "api/schedule",
+                    request);
+
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> UpdateScheduleItemAsync(
+            int id,
+            UpdateScheduleItemRequest request)
+        {
+            var client = CreateClient();
+
+            var response = await client.PutAsJsonAsync(
+                    $"api/schedule/{id}",
+                    request);
+
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> DeleteScheduleItemAsync(int id)
+        {
+            var client = CreateClient();
+
+            var response = await client.DeleteAsync(
+                    $"api/schedule/{id}");
+
+            return response.IsSuccessStatusCode;
         }
     }
 }
