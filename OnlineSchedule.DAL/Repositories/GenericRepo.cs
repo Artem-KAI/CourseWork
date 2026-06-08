@@ -17,12 +17,12 @@ public class GenericRepo<T> : IRepository<T> where T : class
         _dbSet = _ctx.Set<T>();
     }
 
-    public async Task<T?> GetAsync(int id)
+    public virtual async Task<T?> GetAsync(int id)
     {
         return await _dbSet.FindAsync(id);
     }
     
-    public async Task<IEnumerable<T>> GetAllAsync()
+    public virtual async Task<IEnumerable<T>> GetAllAsync()
     {
         return await _dbSet.ToListAsync();
     }
