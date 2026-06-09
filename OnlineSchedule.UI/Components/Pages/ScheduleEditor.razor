@@ -1,15 +1,25 @@
 ﻿@page "/schedule-editor"
 
 @using CONTRACT.DTO
+@using BLL.Enums
 @rendermode @(new InteractiveServerRenderMode())
 
 @inject ApiScheduleService ScheduleService
 @inject NavigationManager Navigation
+@inject UserSessionService Session
 
 <button class="btn btn-secondary mb-3"
         @onclick="GoBack">
     ← Back to Schedule
 </button>
+
+@if (Session.CurrentUser?.Role == "Admin")
+{
+    <button class="btn btn-warning"
+            @onclick="OpenAdminPanel">
+        Admin Panel
+    </button>
+}
 
 <h3>Schedule Editor</h3>
 
@@ -148,6 +158,90 @@
     Add Lesson
 </button>
 
+@if (showAdminPanel)
+{
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Admin Panel</h4>
+        </div>
+
+        <div class="card-body">
+
+            <h5>Add Department</h5>
+
+            <InputSelect @bind-Value="newDepartment.Name"
+                         class="form-select">
+
+                @foreach (var dep in Enum.GetValues<DepartmentName>())
+                {
+                    <option value="@dep">@dep</option>
+                }
+
+            </InputSelect>
+
+            <button class="btn btn-success mt-2"
+                    @onclick="AddDepartment">
+                Add Department
+            </button>
+
+            <hr />
+
+            <h5>Add Discipline</h5>
+
+            <InputText class="form-control"
+                       @bind-Value="newDiscipline.Name" />
+
+            <button class="btn btn-success mt-2"
+                    @onclick="AddDiscipline">
+                Add Discipline
+            </button>
+
+            <hr />
+
+            <h5>Add Group</h5>
+
+            <InputText class="form-control"
+                       @bind-Value="newGroup.Name" />
+
+            <button class="btn btn-success mt-2"
+                    @onclick="AddGroup">
+                Add Group
+            </button>
+
+            <hr />
+
+            <h5>Add Teacher</h5>
+
+            <InputText class="form-control"
+                       @bind-Value="newTeacher.Name" />
+
+            <button class="btn btn-success mt-2"
+                    @onclick="AddTeacher">
+                Add Teacher
+            </button>
+
+            <hr />
+
+            <h5>Add Classroom</h5>
+
+            <InputSelect @bind-Value="newClassroom.Name"
+                         class="form-select">
+
+                @foreach (var dep in Enum.GetValues<ClassroomName>())
+                {
+                    <option value="@dep">@dep</option>
+                }
+            </InputSelect>
+
+            <button class="btn btn-success mt-2"
+                    @onclick="AddClassroom">
+                Add Classroom
+            </button>
+
+        </div>
+    </div>
+}
+
 <table class="table table-striped">
 
     <thead>
@@ -221,6 +315,12 @@
     private List<TeacherInfo> teachers = new();
     private List<ClassroomInfo> classrooms = new();
     private List<DisciplineInfo> disciplines = new();
+
+    private CreateDepartmentRequest newDepartment = new();
+    private CreateDisciplineRequest newDiscipline = new();
+    private CreateGroupRequest newGroup = new();
+    private CreateTeacherRequest newTeacher = new();
+    private CreateClassroomRequest newClassroom = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -320,6 +420,53 @@
         {
             errorMessage = ex.Message;
         }
+    }
+
+    private bool showAdminPanel;
+
+    private void OpenAdminPanel()
+    {
+        showAdminPanel = !showAdminPanel;
+    }
+
+    private async Task AddDepartment()
+    {
+        await ScheduleService.AddDepartmentAsync(
+            newDepartment);
+
+        newDepartment = new();
+    }
+
+    private async Task AddDiscipline()
+    {
+        await ScheduleService.AddDisciplineAsync(
+            newDiscipline);
+
+        newDiscipline = new();
+    }
+
+    private async Task AddGroup()
+    {
+        await ScheduleService.AddGroupAsync(
+            newGroup);
+
+        newGroup = new();
+    }
+
+    private async Task AddTeacher()
+    {
+        await ScheduleService.AddTeacherAsync(
+            newTeacher);
+
+        newTeacher = new();
+    }
+
+    private async Task AddClassroom()
+    {
+        await ScheduleService.AddClassroomAsync(
+            newClassroom);
+
+        newClassroom = new();
     }
 
     private void ClearForm()

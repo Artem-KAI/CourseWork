@@ -30,8 +30,7 @@ namespace UI.Services
             return client;
         }
 
-        public async Task<List<TeacherWorkloadDto>>
-            GetTeacherStatisticsAsync()
+        public async Task<List<TeacherWorkloadDto>> GetTeacherStatisticsAsync()
         {
             var client = CreateClient();
 
@@ -39,8 +38,7 @@ namespace UI.Services
                 ("api/statistics/teachers") ?? new();
         }
 
-        public async Task<List<ClassroomUtilizationDto>>
-            GetClassroomStatisticsAsync()
+        public async Task<List<ClassroomUtilizationDto>> GetClassroomStatisticsAsync()
         {
             var client = CreateClient();
 

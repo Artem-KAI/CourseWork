@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CONTRACT\CONTRACT.csproj" />
+    <ProjectReference Include="..\OnlineSchedule.BLL\OnlineSchedule.BLL.csproj" />
   </ItemGroup>
 
 </Project>

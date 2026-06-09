@@ -158,5 +158,61 @@ namespace UI.Services
 
             return response.IsSuccessStatusCode;
         }
+
+        // Methods for Admin
+        public async Task<bool> AddDepartmentAsync(CreateDepartmentRequest request)
+        {
+            var client = CreateClient();
+
+            var response = await client.PostAsJsonAsync(
+                "api/schedule/departments",
+                request);
+
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> AddGroupAsync(CreateGroupRequest request)
+        {
+            var client = CreateClient();
+
+            var response = await client.PostAsJsonAsync(
+                "api/schedule/groups",
+                request);
+
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> AddTeacherAsync(CreateTeacherRequest request)
+        {
+            var client = CreateClient();
+
+            var response = await client.PostAsJsonAsync(
+                "api/schedule/teachers",
+                request);
+
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> AddClassroomAsync(CreateClassroomRequest request)
+        {
+            var client = CreateClient();
+
+            var response = await client.PostAsJsonAsync(
+                "api/schedule/classrooms",
+                request);
+
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> AddDisciplineAsync(CreateDisciplineRequest request)
+        {
+            var client = CreateClient();
+
+            var response = await client.PostAsJsonAsync(
+                "api/schedule/disciplines",
+                request);
+
+            return response.IsSuccessStatusCode;
+        }
     }
 }
