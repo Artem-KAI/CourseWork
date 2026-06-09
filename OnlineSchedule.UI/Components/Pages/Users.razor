@@ -1,0 +1,15 @@
+﻿@page "/users"
+
+@inject UserSessionService Session
+@inject NavigationManager Navigation
+
+@code {
+
+    protected override void OnInitialized()
+    {
+        if (!Session.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+}

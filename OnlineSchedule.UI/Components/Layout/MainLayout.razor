@@ -1,0 +1,76 @@
+﻿@inherits LayoutComponentBase
+
+@inject UserSessionService Session
+@inject NavigationManager Navigation
+
+<div class="container-fluid">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+
+        <div class="container-fluid">
+
+            <a class="navbar-brand"
+               href="/">
+                Schedule
+            </a>
+
+            @if (Session.IsAuthenticated)
+            {
+                <div class="navbar-nav">
+
+                    <a class="nav-link"
+                       href="/schedule">
+                        Schedule
+                    </a>
+
+                    @if (Session.IsManagement || Session.IsAdmin)
+                    {
+                        <a class="nav-link"
+                           href="/statistics">
+                            Statistics
+                        </a>
+                    }
+
+                    @if (Session.IsAdmin)
+                    {
+                        <a class="nav-link"
+                           href="/users">
+                            Users
+                        </a>
+
+                        <a class="nav-link"
+                           href="/admin">
+                            Admin
+                        </a>
+                    }
+
+                    <button class="btn btn-danger ms-3"
+                            @onclick="Logout">
+                        Logout
+                    </button>
+
+                </div>
+            }
+
+        </div>
+
+    </nav>
+
+    <div class="container mt-4">
+
+        @Body
+
+    </div>
+
+</div>
+
+@code {
+
+    private void Logout()
+    {
+        Session.Logout();
+
+        Navigation.NavigateTo("/");
+    }
+
+}

@@ -1,0 +1,485 @@
+﻿@page "/schedule-editor"
+
+@using CONTRACT.DTO
+@using BLL.Enums
+@rendermode @(new InteractiveServerRenderMode())
+
+@inject ApiScheduleService ScheduleService
+@inject NavigationManager Navigation
+@inject UserSessionService Session
+
+<button class="btn btn-secondary mb-3"
+        @onclick="GoBack">
+    ← Back to Schedule
+</button>
+
+@if (Session.CurrentUser?.Role == "Admin")
+{
+    <button class="btn btn-warning"
+            @onclick="OpenAdminPanel">
+        Admin Panel
+    </button>
+}
+
+<h3>Schedule Editor</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
+
+<div class="card mb-4">
+
+    <div class="card-header">
+        @(isEditMode ? "Edit lesson" : "Add lesson")
+    </div>
+
+    <div class="card-body">
+
+        <div class="row g-2">
+
+            <div class="col">
+                <label>Group Id</label>
+                <InputSelect @bind-Value="model.GroupId" class="form-select">
+                    @foreach (var group in groups)
+                    {
+                        <option value="@group.Id">
+                            @group.Name
+                        </option>
+                    }
+
+                </InputSelect>
+            </div>
+
+            <div class="col">
+                <label>Teacher Id</label>
+                <InputSelect @bind-Value="model.TeacherId" class="form-select">
+
+                    @foreach (var teacher in teachers)
+                    {
+                        <option value="@teacher.Id">
+                            @teacher.Name
+                        </option>
+                    }
+
+                </InputSelect>
+            </div>
+
+            <div class="col">
+                <label>Classroom Id</label>
+                <InputSelect @bind-Value="model.ClassroomId" class="form-select">
+
+                    @foreach (var classroom in classrooms)
+                    {
+                        <option value="@classroom.Id">
+                            @classroom.Name
+                        </option>
+                    }
+
+                </InputSelect>
+            </div>
+
+            <div class="col">
+                <label>Discipline Id</label>
+                <InputSelect @bind-Value="model.DisciplineId" class="form-select">
+
+                    @foreach (var discipline in disciplines)
+                    {
+                        <option value="@discipline.Id">
+                            @discipline.Name
+                        </option>
+                    }
+
+                </InputSelect>
+            </div>
+
+        </div>
+
+        <div class="row g-2 mt-2">
+
+            <div class="col">
+                <label>Day</label>
+
+                <InputSelect class="form-control"
+                             @bind-Value="model.DayOfWeek">
+
+                    @foreach (DayOfWeek day in Enum.GetValues<DayOfWeek>())
+                    {
+                        <option value="@day">@day</option>
+                    }
+
+                </InputSelect>
+            </div>
+
+            <div class="col">
+                <label>Lesson Number</label>
+
+                <InputNumber class="form-control"
+                             @bind-Value="model.LessonNumber" />
+            </div>
+
+            <div class="col">
+                <label>Week Type</label>
+
+                <InputSelect class="form-control"
+                             @bind-Value="model.WeekType">
+
+                    <option value="Both">Both</option>
+                    <option value="Odd">Odd</option>
+                    <option value="Even">Even</option>
+
+                </InputSelect>
+            </div>
+
+        </div>
+
+        <div class="mt-3">
+
+            <button class="btn btn-success"
+                    @onclick="SaveLesson">
+                Save
+            </button>
+
+            <button class="btn btn-secondary ms-2"
+                    @onclick="ClearForm">
+                Cancel
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<button class="btn btn-primary mb-3"
+        @onclick="CreateNew">
+    Add Lesson
+</button>
+
+@if (showAdminPanel)
+{
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Admin Panel</h4>
+        </div>
+
+        <div class="card-body">
+
+            <h5>Add Department</h5>
+
+            <InputSelect @bind-Value="newDepartment.Name"
+                         class="form-select">
+
+                @foreach (var dep in Enum.GetValues<DepartmentName>())
+                {
+                    <option value="@dep">@dep</option>
+                }
+
+            </InputSelect>
+
+            <button class="btn btn-success mt-2"
+                    @onclick="AddDepartment">
+                Add Department
+            </button>
+
+            <hr />
+
+            <h5>Add Discipline</h5>
+
+            <InputText class="form-control"
+                       @bind-Value="newDiscipline.Name" />
+
+            <button class="btn btn-success mt-2"
+                    @onclick="AddDiscipline">
+                Add Discipline
+            </button>
+
+            <hr />
+
+            <h5>Add Group</h5>
+
+            <InputText class="form-control"
+                       @bind-Value="newGroup.Name" />
+
+            <button class="btn btn-success mt-2"
+                    @onclick="AddGroup">
+                Add Group
+            </button>
+
+            <hr />
+
+            <h5>Add Teacher</h5>
+
+            <InputText class="form-control"
+                       @bind-Value="newTeacher.Name" />
+
+            <button class="btn btn-success mt-2"
+                    @onclick="AddTeacher">
+                Add Teacher
+            </button>
+
+            <hr />
+
+            <h5>Add Classroom</h5>
+
+            <InputSelect @bind-Value="newClassroom.Name"
+                         class="form-select">
+
+                @foreach (var dep in Enum.GetValues<ClassroomName>())
+                {
+                    <option value="@dep">@dep</option>
+                }
+            </InputSelect>
+
+            <button class="btn btn-success mt-2"
+                    @onclick="AddClassroom">
+                Add Classroom
+            </button>
+
+        </div>
+    </div>
+}
+
+<table class="table table-striped">
+
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Group</th>
+            <th>Teacher</th>
+            <th>Classroom</th>
+            <th>Discipline</th>
+            <th>Day</th>
+            <th>Lesson</th>
+            <th>Week</th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        @foreach (var item in scheduleItems)
+        {
+            <tr>
+
+                <td>@item.Id</td>
+
+                <td>@item.GroupName</td>
+
+                <td>@item.TeacherName</td>
+
+                <td>@item.ClassroomName</td>
+
+                <td>@item.DisciplineName</td>
+
+                <td>@item.DayOfWeek</td>
+
+                <td>@item.LessonNumber</td>
+
+                <td>@item.WeekType</td>
+
+                <td>
+
+                    <button class="btn btn-warning btn-sm"
+                            @onclick="() => EditLesson(item)">
+                        Edit
+                    </button>
+
+                    <button class="btn btn-danger btn-sm ms-2"
+                            @onclick="() => DeleteLesson(item.Id)">
+                        Delete
+                    </button>
+
+                </td>
+
+            </tr>
+        }
+
+    </tbody>
+
+</table>
+
+@code {
+
+    private List<ScheduleItemInfo> scheduleItems = new();
+
+    private CreateScheduleItemRequest model = new();
+
+    private bool isEditMode;
+    private int editingId;
+    private string? errorMessage;
+
+    private List<GroupInfo> groups = new();
+    private List<TeacherInfo> teachers = new();
+    private List<ClassroomInfo> classrooms = new();
+    private List<DisciplineInfo> disciplines = new();
+
+    private CreateDepartmentRequest newDepartment = new();
+    private CreateDisciplineRequest newDiscipline = new();
+    private CreateGroupRequest newGroup = new();
+    private CreateTeacherRequest newTeacher = new();
+    private CreateClassroomRequest newClassroom = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        scheduleItems =
+            await ScheduleService.GetAllScheduleItemsAsync();
+
+        groups =
+            (await ScheduleService.GetGroupsAsync()).ToList();
+
+        teachers =
+            (await ScheduleService.GetTeachersAsync()).ToList();
+
+        classrooms =
+            (await ScheduleService.GetClassroomsAsync()).ToList();
+
+        disciplines =
+            (await ScheduleService.GetDisciplinesAsync()).ToList();
+    }
+
+    private void CreateNew()
+    {
+        ClearForm();
+    }
+
+    private void EditLesson(ScheduleItemInfo item)
+    {
+        isEditMode = true;
+
+        editingId = item.Id;
+
+        model = new CreateScheduleItemRequest
+        {
+            GroupId = item.GroupId,
+            TeacherId = item.TeacherId,
+            ClassroomId = item.ClassroomId,
+            DisciplineId = item.DisciplineId,
+            DayOfWeek = item.DayOfWeek,
+            LessonNumber = item.LessonNumber,
+            WeekType = item.WeekType
+        };
+    }
+
+    private async Task SaveLesson()
+    {
+        try
+        {
+            errorMessage = null;
+
+            if (isEditMode)
+            {
+                var request = new UpdateScheduleItemRequest
+                {
+                    GroupId = model.GroupId,
+                    TeacherId = model.TeacherId,
+                    ClassroomId = model.ClassroomId,
+                    DisciplineId = model.DisciplineId,
+                    DayOfWeek = model.DayOfWeek,
+                    LessonNumber = model.LessonNumber,
+                    WeekType = model.WeekType
+                };
+
+                await ScheduleService.UpdateScheduleItemAsync(
+                    editingId,
+                    request);
+            }
+            else
+            {
+                await ScheduleService.CreateScheduleItemAsync(model);
+            }
+
+            await LoadData();
+
+            ClearForm();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteLesson(int id)
+    {
+        try
+        {
+            errorMessage = null;
+
+            await ScheduleService.DeleteScheduleItemAsync(id);
+
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private bool showAdminPanel;
+
+    private void OpenAdminPanel()
+    {
+        showAdminPanel = !showAdminPanel;
+    }
+
+    private async Task AddDepartment()
+    {
+        await ScheduleService.AddDepartmentAsync(
+            newDepartment);
+
+        newDepartment = new();
+    }
+
+    private async Task AddDiscipline()
+    {
+        await ScheduleService.AddDisciplineAsync(
+            newDiscipline);
+
+        newDiscipline = new();
+    }
+
+    private async Task AddGroup()
+    {
+        await ScheduleService.AddGroupAsync(
+            newGroup);
+
+        newGroup = new();
+    }
+
+    private async Task AddTeacher()
+    {
+        await ScheduleService.AddTeacherAsync(
+            newTeacher);
+
+        newTeacher = new();
+    }
+
+    private async Task AddClassroom()
+    {
+        await ScheduleService.AddClassroomAsync(
+            newClassroom);
+
+        newClassroom = new();
+    }
+
+    private void ClearForm()
+    {
+        model = new CreateScheduleItemRequest();
+
+        editingId = 0;
+
+        isEditMode = false;
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/schedule");
+    }
+}

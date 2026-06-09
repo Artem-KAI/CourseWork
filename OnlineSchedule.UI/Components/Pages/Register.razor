@@ -1,0 +1,59 @@
+﻿@page "/register"
+@rendermode @(new InteractiveServerRenderMode())
+
+@using global::UI.Models
+
+@inject ApiAuthService AuthService
+@inject NavigationManager Navigation
+
+<h3>Реєстрація</h3>
+
+<div class="mb-3">
+    <label>Username</label>
+    <input class="form-control"
+           @bind="Model.Username" />
+</div>
+
+<div class="mb-3">
+    <label>Email</label>
+    <input class="form-control"
+           @bind="Model.Email" />
+</div>
+
+<div class="mb-3">
+    <label>Password</label>
+    <input type="password"
+           class="form-control"
+           @bind="Model.Password" />
+</div>
+
+<div class="mb-3">
+    <label>Role</label>
+
+    <select class="form-select"
+            @bind="Model.Role">
+
+        <option>Student</option>
+        <option>Teacher</option>
+        <option>Editor</option>
+        <option>Management</option>
+
+    </select>
+</div>
+
+<button class="btn btn-success"
+        @onclick="RegisterUser">
+    Register
+</button>
+
+@code
+{
+    private RegisterRequest Model = new();
+
+    private async Task RegisterUser()
+    {
+        await AuthService.RegisterAsync(Model);
+
+        Navigation.NavigateTo("/login");
+    }
+}

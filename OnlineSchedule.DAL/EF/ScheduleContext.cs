@@ -64,8 +64,8 @@ public class ScheduleContext : DbContext
             .HasForeignKey(t => t.UserId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // Seed Users (SHA256 of "password123" is: 5e8837cd00ece283717503292153a338025a16f81585c329043f1144836b0b4c)
-        string pwdHash = "5e8837cd00ece283717503292153a338025a16f81585c329043f1144836b0b4c";
+        // Seed Users (SHA256 of "password123" is: ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f)
+        string pwdHash = "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f";
         modelBuilder.Entity<User>().HasData(
             new User { Id = 1, Username = "admin", Email = "admin@schedule.com", PasswordHash = pwdHash, Role = "Admin" },
             new User { Id = 2, Username = "editor", Email = "editor@schedule.com", PasswordHash = pwdHash, Role = "Editor" },

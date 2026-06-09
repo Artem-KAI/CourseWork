@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -7,18 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Autofac" Version="9.1.0" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="11.0.0" />
+    <PackageReference Include="AutoMapper" Version="13.0.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\CONTRACT\CONTRACT.csproj" />
     <ProjectReference Include="..\OnlineSchedule.BLL\OnlineSchedule.BLL.csproj" />
     <ProjectReference Include="..\OnlineSchedule.DAL\OnlineSchedule.DAL.csproj" />
-    <ProjectReference Include="..\OnlineSchedule.UI\OnlineSchedule.UI.csproj" />
   </ItemGroup>
 
 </Project>

@@ -226,6 +226,19 @@ public sealed class ScheduleManager : IScheduleManager
     }
 
     /// <summary>
+    /// Повертає весь розклад. Доступно для Admin та Editor.
+    /// </summary>
+    public async Task<IReadOnlyCollection<ScheduleItemInfo>>
+        GetAllScheduleItemsAsync(int currentUserId)
+    {
+        await GetAndValidateUserAsync(currentUserId, new[] { "Admin", "Editor" }, "Тільки Адміністратори та Редактори можуть переглядати редактор розкладу.");
+
+        var items = await _store.ScheduleItems.GetAllAsync();
+
+        return _mapper.Map<IReadOnlyCollection<ScheduleItemInfo>>(items);
+    }
+
+    /// <summary>
     /// Додає нову пару в розклад. Перевіряє права (Admin, Editor), наявність сутностей та конфлікти часу.
     /// </summary>
     public async Task CreateScheduleItemAsync(int currentUserId, int groupId, int teacherId, int classroomId, int disciplineId, DayOfWeek dayOfWeek, int lessonNumber, string weekType)
@@ -328,8 +341,15 @@ public sealed class ScheduleManager : IScheduleManager
     /// </summary>
     public async Task<IReadOnlyCollection<TeacherInfo>> GetAllTeachersAsync(int currentUserId)
     {
-        await GetAndValidateUserAsync(currentUserId);
+        var user = await GetAndValidateUserAsync(currentUserId);
         var teachers = await _store.Teachers.GetAllAsync();
+        if (user.Role == "Teacher")
+        {
+            teachers = teachers
+                .Where(t => t.UserId == user.Id)
+                .ToList();
+        }
+
         return _mapper.Map<IReadOnlyCollection<TeacherInfo>>(teachers);
     }
 

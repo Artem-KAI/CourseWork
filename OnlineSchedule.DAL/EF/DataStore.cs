@@ -15,7 +15,7 @@ public class DataStore : IDataStore
     private GenericRepo<Group>? _groupRepo;
     private GenericRepo<Classroom>? _classroomRepo;
     private GenericRepo<Discipline>? _disciplineRepo;
-    private GenericRepo<ScheduleItem>? _scheduleItemRepo;
+    private ScheduleItemRepository? _scheduleItemRepo;
 
     public DataStore(ScheduleContext context)
     {
@@ -110,7 +110,7 @@ public class DataStore : IDataStore
         {
             if (_scheduleItemRepo == null)
             {
-                _scheduleItemRepo = new GenericRepo<ScheduleItem>(_ctx);
+                _scheduleItemRepo = new ScheduleItemRepository(_ctx);
             }
             return _scheduleItemRepo;
         }
