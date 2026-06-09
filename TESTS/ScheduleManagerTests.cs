@@ -54,14 +54,14 @@ public class ScheduleManagerTests
 
         _teachers = new List<Teacher>
         {
-            new Teacher { Id = 201, Name = "Дишлевий О.П.", DepartmentId = 1, UserId = 4 },
-            new Teacher { Id = 202, Name = "Коваленко І.І.", DepartmentId = 2, UserId = null }
+            new Teacher { Id = 201, Name = "Дишлевий О.П.", Degree = "доцент", DepartmentId = 1, UserId = 4 },
+            new Teacher { Id = 202, Name = "Коваленко І.І.", Degree = "професор", DepartmentId = 2, UserId = null }
         };
 
         _classrooms = new List<Classroom>
         {
-            new Classroom { Id = 301, Name = "1-305", Capacity = 30 },
-            new Classroom { Id = 302, Name = "1-402", Capacity = 50 }
+            new Classroom { Id = 301, Name = "1-305", Building = "Корпус 1", Capacity = 30 },
+            new Classroom { Id = 302, Name = "1-402", Building = "Корпус 1", Capacity = 50 }
         };
 
         _departments = new List<Department>
@@ -72,8 +72,8 @@ public class ScheduleManagerTests
 
         _disciplines = new List<Discipline>
         {
-            new Discipline { Id = 401, Name = "Архітектура ПЗ" },
-            new Discipline { Id = 402, Name = "Бази даних" }
+            new Discipline { Id = 401, Name = "Архітектура ПЗ", DepartmentId = 1 },
+            new Discipline { Id = 402, Name = "Бази даних", DepartmentId = 1 }
         };
 
         var mockGroup = _groups.First(g => g.Id == 101);
@@ -100,31 +100,42 @@ public class ScheduleManagerTests
             }
         };
 
-        // 3. Configure Mock repositories using ReturnsAsync
+        // 3. Configure Mock repositories
         var usersRepoMock = new Mock<IRepository<User>>();
         usersRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(_users);
         usersRepoMock.Setup(r => r.GetAsync(It.IsAny<int>())).ReturnsAsync((int id) => _users.FirstOrDefault(u => u.Id == id));
 
         var groupsRepoMock = new Mock<IRepository<Group>>();
         groupsRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(_groups);
+        groupsRepoMock.Setup(r => r.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Group, object>>[]>())).ReturnsAsync(_groups);
         groupsRepoMock.Setup(r => r.GetAsync(It.IsAny<int>())).ReturnsAsync((int id) => _groups.FirstOrDefault(g => g.Id == id));
+        groupsRepoMock.Setup(r => r.CreateAsync(It.IsAny<Group>())).Callback<Group>(g => _groups.Add(g)).Returns(Task.CompletedTask);
+        groupsRepoMock.Setup(r => r.DeleteAsync(It.IsAny<int>())).Callback<int>(id => _groups.RemoveAll(g => g.Id == id)).Returns(Task.CompletedTask);
 
         var teachersRepoMock = new Mock<IRepository<Teacher>>();
         teachersRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(_teachers);
+        teachersRepoMock.Setup(r => r.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Teacher, object>>[]>())).ReturnsAsync(_teachers);
         teachersRepoMock.Setup(r => r.GetAsync(It.IsAny<int>())).ReturnsAsync((int id) => _teachers.FirstOrDefault(t => t.Id == id));
+        teachersRepoMock.Setup(r => r.CreateAsync(It.IsAny<Teacher>())).Callback<Teacher>(t => _teachers.Add(t)).Returns(Task.CompletedTask);
+        teachersRepoMock.Setup(r => r.DeleteAsync(It.IsAny<int>())).Callback<int>(id => _teachers.RemoveAll(t => t.Id == id)).Returns(Task.CompletedTask);
 
         var classroomsRepoMock = new Mock<IRepository<Classroom>>();
         classroomsRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(_classrooms);
         classroomsRepoMock.Setup(r => r.GetAsync(It.IsAny<int>())).ReturnsAsync((int id) => _classrooms.FirstOrDefault(c => c.Id == id));
+        classroomsRepoMock.Setup(r => r.CreateAsync(It.IsAny<Classroom>())).Callback<Classroom>(c => _classrooms.Add(c)).Returns(Task.CompletedTask);
+        classroomsRepoMock.Setup(r => r.DeleteAsync(It.IsAny<int>())).Callback<int>(id => _classrooms.RemoveAll(c => c.Id == id)).Returns(Task.CompletedTask);
 
         var disciplinesRepoMock = new Mock<IRepository<Discipline>>();
         disciplinesRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(_disciplines);
         disciplinesRepoMock.Setup(r => r.GetAsync(It.IsAny<int>())).ReturnsAsync((int id) => _disciplines.FirstOrDefault(d => d.Id == id));
+        disciplinesRepoMock.Setup(r => r.CreateAsync(It.IsAny<Discipline>())).Callback<Discipline>(d => _disciplines.Add(d)).Returns(Task.CompletedTask);
+        disciplinesRepoMock.Setup(r => r.DeleteAsync(It.IsAny<int>())).Callback<int>(id => _disciplines.RemoveAll(d => d.Id == id)).Returns(Task.CompletedTask);
 
         var departmentsRepoMock = new Mock<IRepository<Department>>();
         departmentsRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(_departments);
         departmentsRepoMock.Setup(r => r.GetAsync(It.IsAny<int>())).ReturnsAsync((int id) => _departments.FirstOrDefault(d => d.Id == id));
         departmentsRepoMock.Setup(r => r.CreateAsync(It.IsAny<Department>())).Callback<Department>(d => _departments.Add(d)).Returns(Task.CompletedTask);
+        departmentsRepoMock.Setup(r => r.DeleteAsync(It.IsAny<int>())).Callback<int>(id => _departments.RemoveAll(d => d.Id == id)).Returns(Task.CompletedTask);
 
         var scheduleItemsRepoMock = new Mock<IRepository<ScheduleItem>>();
         scheduleItemsRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(_scheduleItems);
@@ -332,33 +343,109 @@ public class ScheduleManagerTests
     }
 
     [Test]
-    public void CreateClassroom_WithInvalidBuildingRoomMismatch_ThrowsArgumentException()
+    public void CreateDepartment_WithDuplicateName_ThrowsArgumentException()
     {
         // Arrange
         int adminUserId = 1;
-        var room = BLL.Enums.ClassroomName.Room_201; // Належить до ScienceBuilding
-        var building = BLL.Enums.ClassroomBuilding.MainBuilding;
+        string duplicateName = "FICT"; // Already exists in _departments setup
 
         // Act & Assert
         var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
-            await _scheduleManager.CreateClassroomAsync(adminUserId, room, building, 30)
+            await _scheduleManager.CreateDepartmentAsync(adminUserId, duplicateName)
         );
-        Assert.That(ex.Message, Does.Contain("не належить навчальному корпусу"));
+        Assert.That(ex.Message, Does.Contain("вже існує"));
     }
 
     [Test]
-    public async Task CreateClassroom_WithValidBuildingRoomCompliance_Succeeds()
+    public async Task CreateClassroom_WithStrings_Succeeds()
     {
         // Arrange
         int adminUserId = 1;
-        var room = BLL.Enums.ClassroomName.Room_101; // Належить до MainBuilding
-        var building = BLL.Enums.ClassroomBuilding.MainBuilding;
+        string room = "1-306";
+        string building = "Корпус 1";
 
         // Act
         await _scheduleManager.CreateClassroomAsync(adminUserId, room, building, 30);
 
         // Assert
-        _storeMock.Verify(s => s.Classrooms.CreateAsync(It.Is<Classroom>(c => c.Name == "Room_101" && c.Building == "MainBuilding")), Times.Once);
+        _storeMock.Verify(s => s.Classrooms.CreateAsync(It.Is<Classroom>(c => c.Name == "1-306" && c.Building == "Корпус 1")), Times.Once);
+    }
+
+    [Test]
+    public void CreateClassroom_WithDuplicateNameAndBuilding_ThrowsArgumentException()
+    {
+        // Arrange
+        int adminUserId = 1;
+        string room = "1-305"; // Setup classrooms has this
+        string building = "Корпус 1";
+
+        // Act & Assert
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _scheduleManager.CreateClassroomAsync(adminUserId, room, building, 40)
+        );
+        Assert.That(ex.Message, Does.Contain("вже існує"));
+    }
+
+    [Test]
+    public async Task UpdateDepartment_Succeeds()
+    {
+        // Arrange
+        int adminUserId = 1;
+        int targetDeptId = 1;
+        string newName = "New FICT";
+
+        // Act
+        await _scheduleManager.UpdateDepartmentAsync(adminUserId, targetDeptId, newName);
+
+        // Assert
+        var dept = _departments.First(d => d.Id == targetDeptId);
+        Assert.That(dept.Name, Is.EqualTo("New FICT"));
+        _storeMock.Verify(s => s.CommitAsync(), Times.Once);
+    }
+
+    [Test]
+    public async Task DeleteDepartment_Succeeds()
+    {
+        // Arrange
+        int adminUserId = 1;
+        int targetDeptId = 1;
+
+        // Act
+        await _scheduleManager.DeleteDepartmentAsync(adminUserId, targetDeptId);
+
+        // Assert
+        Assert.That(_departments.Any(d => d.Id == targetDeptId), Is.False);
+        _storeMock.Verify(s => s.CommitAsync(), Times.Once);
+    }
+
+    [Test]
+    public void CreateTeacher_WithInvalidDegree_ThrowsArgumentException()
+    {
+        // Arrange
+        int adminUserId = 1;
+        string name = "Petrenko P.P.";
+        string invalidDegree = "Super Professor"; // Not in TeacherDegree list
+
+        // Act & Assert
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _scheduleManager.CreateTeacherAsync(adminUserId, name, invalidDegree, 1, null)
+        );
+        Assert.That(ex.Message, Does.Contain("Неприпустимий науковий ступінь"));
+    }
+
+    [Test]
+    public async Task CreateTeacher_WithValidDegree_Succeeds()
+    {
+        // Arrange
+        int adminUserId = 1;
+        string name = "Shevchenko S.S.";
+        string validDegree = "доцент";
+
+        // Act
+        await _scheduleManager.CreateTeacherAsync(adminUserId, name, validDegree, 1, null);
+
+        // Assert
+        Assert.That(_teachers.Any(t => t.Name == "Shevchenko S.S." && t.Degree == "Доцент"), Is.True);
     }
     #endregion
 }

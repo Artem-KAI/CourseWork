@@ -1,4 +1,4 @@
-﻿using UI.Models;
+using UI.Models;
 
 namespace UI.Services
 {
@@ -8,11 +8,11 @@ namespace UI.Services
 
         public bool IsAuthenticated => CurrentUser != null;
 
-        public bool IsAdmin => CurrentUser?.Role == "Admin";
-        public bool IsEditor => CurrentUser?.Role == "Editor";
-        public bool IsTeacher => CurrentUser?.Role == "Teacher";
-        public bool IsStudent => CurrentUser?.Role == "Student";
-        public bool IsManagement => CurrentUser?.Role == "Management";
+        public bool IsAdmin => string.Equals(CurrentUser?.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+        public bool IsEditor => string.Equals(CurrentUser?.Role, "Editor", StringComparison.OrdinalIgnoreCase);
+        public bool IsTeacher => string.Equals(CurrentUser?.Role, "Teacher", StringComparison.OrdinalIgnoreCase);
+        public bool IsStudent => string.Equals(CurrentUser?.Role, "Student", StringComparison.OrdinalIgnoreCase);
+        public bool IsManagement => string.Equals(CurrentUser?.Role, "Management", StringComparison.OrdinalIgnoreCase);
 
         public void SetUser(CurrentUser user)
         {

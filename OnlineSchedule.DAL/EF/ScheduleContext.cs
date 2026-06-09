@@ -64,6 +64,13 @@ public class ScheduleContext : DbContext
             .HasForeignKey(t => t.UserId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // Configure Discipline-Department
+        modelBuilder.Entity<Discipline>()
+            .HasOne(d => d.Department)
+            .WithMany()
+            .HasForeignKey(d => d.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Seed Users (SHA256 of "password123" is: ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f)
         string pwdHash = "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f";
         modelBuilder.Entity<User>().HasData(
@@ -102,9 +109,9 @@ public class ScheduleContext : DbContext
 
         // Seed Disciplines
         modelBuilder.Entity<Discipline>().HasData(
-            new Discipline { Id = 1, Name = "Архітектура та проектування ПЗ" },
-            new Discipline { Id = 2, Name = "Бази даних" },
-            new Discipline { Id = 3, Name = "Алгоритми та структури даних" }
+            new Discipline { Id = 1, Name = "Архітектура та проектування ПЗ", DepartmentId = 1 },
+            new Discipline { Id = 2, Name = "Бази даних", DepartmentId = 1 },
+            new Discipline { Id = 3, Name = "Алгоритми та структури даних", DepartmentId = 2 }
         );
 
         // Seed ScheduleItems

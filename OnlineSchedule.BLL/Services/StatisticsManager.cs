@@ -37,7 +37,7 @@ public sealed class StatisticsManager : IStatisticsManager
         }
 
         // Статистика доступна тільки адміністраторам та управлінському складу
-        if (user.Role != "Admin" && user.Role != "Management")
+        if (!string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase) && !string.Equals(user.Role, "Management", StringComparison.OrdinalIgnoreCase))
         {
             throw new AccessDeniedException("Доступ до статистики дозволений лише Адміністраторам та Управлінському складу.");
         }

@@ -1,4 +1,4 @@
-﻿using CONTRACT.DTO;
+using CONTRACT.DTO;
 
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,7 +28,7 @@ namespace WebAPI.Controllers
             var users = await userManager.GetAllUsersAsync();
             var user = users.FirstOrDefault(x => x.Id == userId);
 
-            return user?.Role == "Admin";
+            return string.Equals(user?.Role, "Admin", StringComparison.OrdinalIgnoreCase);
         }
 
         [HttpGet]

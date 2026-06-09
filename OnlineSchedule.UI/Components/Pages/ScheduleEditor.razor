@@ -1,361 +1,591 @@
-﻿@page "/schedule-editor"
+@page "/schedule-editor"
 
 @using CONTRACT.DTO
-@using BLL.Enums
 @rendermode @(new InteractiveServerRenderMode())
 
 @inject ApiScheduleService ScheduleService
 @inject NavigationManager Navigation
 @inject UserSessionService Session
 
-<button class="btn btn-secondary mb-3"
-        @onclick="GoBack">
-    ← Back to Schedule
-</button>
-
-@if (Session.CurrentUser?.Role == "Admin")
-{
-    <button class="btn btn-warning"
-            @onclick="OpenAdminPanel">
-        Admin Panel
-    </button>
-}
-
-<h3>Schedule Editor</h3>
-
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger">
-        @errorMessage
-    </div>
-}
-
-<div class="card mb-4">
-
-    <div class="card-header">
-        @(isEditMode ? "Edit lesson" : "Add lesson")
+<div class="container-fluid py-4" style="font-family: 'Outfit', 'Segoe UI', sans-serif; background-color: #f8f9fa; min-height: 100vh;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <button class="btn btn-outline-secondary d-flex align-items-center gap-2 px-3 py-2 shadow-sm"
+                @onclick="GoBack" style="border-radius: 8px; font-weight: 500;">
+            <i class="bi bi-arrow-left"></i> ← Back to Schedule
+        </button>
+        <h2 class="text-dark m-0" style="font-weight: 700; letter-spacing: -0.5px;">Schedule Management Console</h2>
     </div>
 
-    <div class="card-body">
-
-        <div class="row g-2">
-
-            <div class="col">
-                <label>Group Id</label>
-                <InputSelect @bind-Value="model.GroupId" class="form-select">
-                    @foreach (var group in groups)
-                    {
-                        <option value="@group.Id">
-                            @group.Name
-                        </option>
-                    }
-
-                </InputSelect>
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger d-flex align-items-center shadow-sm border-0 mb-4" role="alert" style="border-radius: 12px; background-color: #fff5f5; color: #e53e3e;">
+            <div class="flex-grow-1">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
             </div>
-
-            <div class="col">
-                <label>Teacher Id</label>
-                <InputSelect @bind-Value="model.TeacherId" class="form-select">
-
-                    @foreach (var teacher in teachers)
-                    {
-                        <option value="@teacher.Id">
-                            @teacher.Name
-                        </option>
-                    }
-
-                </InputSelect>
-            </div>
-
-            <div class="col">
-                <label>Classroom Id</label>
-                <InputSelect @bind-Value="model.ClassroomId" class="form-select">
-
-                    @foreach (var classroom in classrooms)
-                    {
-                        <option value="@classroom.Id">
-                            @classroom.Name
-                        </option>
-                    }
-
-                </InputSelect>
-            </div>
-
-            <div class="col">
-                <label>Discipline Id</label>
-                <InputSelect @bind-Value="model.DisciplineId" class="form-select">
-
-                    @foreach (var discipline in disciplines)
-                    {
-                        <option value="@discipline.Id">
-                            @discipline.Name
-                        </option>
-                    }
-
-                </InputSelect>
-            </div>
-
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null" aria-label="Close"></button>
         </div>
+    }
 
-        <div class="row g-2 mt-2">
-
-            <div class="col">
-                <label>Day</label>
-
-                <InputSelect class="form-control"
-                             @bind-Value="model.DayOfWeek">
-
-                    @foreach (DayOfWeek day in Enum.GetValues<DayOfWeek>())
-                    {
-                        <option value="@day">@day</option>
-                    }
-
-                </InputSelect>
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success d-flex align-items-center shadow-sm border-0 mb-4" role="alert" style="border-radius: 12px; background-color: #f0fff4; color: #38a169;">
+            <div class="flex-grow-1">
+                <i class="bi bi-check-circle-fill me-2"></i> @successMessage
             </div>
-
-            <div class="col">
-                <label>Lesson Number</label>
-
-                <InputNumber class="form-control"
-                             @bind-Value="model.LessonNumber" />
-            </div>
-
-            <div class="col">
-                <label>Week Type</label>
-
-                <InputSelect class="form-control"
-                             @bind-Value="model.WeekType">
-
-                    <option value="Both">Both</option>
-                    <option value="Odd">Odd</option>
-                    <option value="Even">Even</option>
-
-                </InputSelect>
-            </div>
-
+            <button type="button" class="btn-close" @onclick="() => successMessage = null" aria-label="Close"></button>
         </div>
+    }
 
-        <div class="mt-3">
-
-            <button class="btn btn-success"
-                    @onclick="SaveLesson">
-                Save
+    <!-- Tab Navigation -->
+    <ul class="nav nav-pills mb-4 gap-2 shadow-sm p-2 bg-white" style="border-radius: 12px;">
+        <li class="nav-item">
+            <button class="nav-link @(activeTab == Tab.Schedule ? "active bg-primary text-white" : "text-secondary")" 
+                    @onclick="() => SwitchTab(Tab.Schedule)" style="border-radius: 8px; font-weight: 600;">
+                Lessons Schedule
             </button>
+        </li>
+        @if (Session.IsAdmin)
+        {
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == Tab.Departments ? "active bg-primary text-white" : "text-secondary")" 
+                        @onclick="() => SwitchTab(Tab.Departments)" style="border-radius: 8px; font-weight: 600;">
+                    Departments
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == Tab.Groups ? "active bg-primary text-white" : "text-secondary")" 
+                        @onclick="() => SwitchTab(Tab.Groups)" style="border-radius: 8px; font-weight: 600;">
+                    Groups
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == Tab.Teachers ? "active bg-primary text-white" : "text-secondary")" 
+                        @onclick="() => SwitchTab(Tab.Teachers)" style="border-radius: 8px; font-weight: 600;">
+                    Teachers
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == Tab.Classrooms ? "active bg-primary text-white" : "text-secondary")" 
+                        @onclick="() => SwitchTab(Tab.Classrooms)" style="border-radius: 8px; font-weight: 600;">
+                    Classrooms
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == Tab.Disciplines ? "active bg-primary text-white" : "text-secondary")" 
+                        @onclick="() => SwitchTab(Tab.Disciplines)" style="border-radius: 8px; font-weight: 600;">
+                    Disciplines
+                </button>
+            </li>
+        }
+    </ul>
 
-            <button class="btn btn-secondary ms-2"
-                    @onclick="ClearForm">
-                Cancel
-            </button>
+    <!-- Tabs Content -->
+    <div class="card shadow-sm border-0 p-4" style="border-radius: 16px; background-color: #ffffff;">
 
-        </div>
+        @if (activeTab == Tab.Schedule)
+        {
+            <!-- LESSON SCHEDULE WORK -->
+            <div class="card mb-4 border-0 bg-light" style="border-radius: 12px;">
+                <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                    <h5 style="font-weight: 700; color: #2d3748;">@(isEditMode ? "Edit Lesson Item" : "Schedule New Lesson")</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-weight: 600; color: #4a5568;">Academic Group</label>
+                            <select @bind="model.GroupId" class="form-select" style="border-radius: 8px;">
+                                <option value="0">Select Group</option>
+                                @foreach (var group in groups)
+                                {
+                                    <option value="@group.Id">@group.Name (@group.DepartmentName)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-weight: 600; color: #4a5568;">Teacher</label>
+                            <select @bind="model.TeacherId" class="form-select" style="border-radius: 8px;">
+                                <option value="0">Select Teacher</option>
+                                @foreach (var teacher in teachers)
+                                {
+                                    <option value="@teacher.Id">@teacher.Name (@teacher.DepartmentName - @teacher.Degree)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-weight: 600; color: #4a5568;">Classroom</label>
+                            <select @bind="model.ClassroomId" class="form-select" style="border-radius: 8px;">
+                                <option value="0">Select Room</option>
+                                @foreach (var classroom in classrooms)
+                                {
+                                    <option value="@classroom.Id">@classroom.Name (@classroom.Building, Cap: @classroom.Capacity)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-weight: 600; color: #4a5568;">Discipline</label>
+                            <select @bind="model.DisciplineId" class="form-select" style="border-radius: 8px;">
+                                <option value="0">Select Discipline</option>
+                                @foreach (var discipline in disciplines)
+                                {
+                                    <option value="@discipline.Id">@discipline.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-weight: 600; color: #4a5568;">Day of Week</label>
+                            <select class="form-select" @bind="model.DayOfWeek" style="border-radius: 8px;">
+                                @foreach (DayOfWeek day in Enum.GetValues<DayOfWeek>())
+                                {
+                                    <option value="@day">@day</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-weight: 600; color: #4a5568;">Lesson Number (Pair)</label>
+                            <input type="number" class="form-control" @bind="model.LessonNumber" min="1" max="8" style="border-radius: 8px;" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-weight: 600; color: #4a5568;">Week Type</label>
+                            <select class="form-select" @bind="model.WeekType" style="border-radius: 8px;">
+                                <option value="Both">Both Weeks</option>
+                                <option value="Odd">Odd Week</option>
+                                <option value="Even">Even Week</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button class="btn btn-success px-4 py-2" @onclick="SaveLesson" style="border-radius: 8px; font-weight: 600;">
+                            <i class="bi bi-save"></i> Save Lesson
+                        </button>
+                        @if (isEditMode)
+                        {
+                            <button class="btn btn-secondary px-4 py-2" @onclick="ClearForm" style="border-radius: 8px; font-weight: 600;">
+                                Cancel
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="mb-3" style="font-weight: 700; color: #2d3748;">Active Schedule Listings</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle shadow-sm bg-white" style="border-radius: 12px; overflow: hidden;">
+                    <thead class="table-primary text-white">
+                        <tr>
+                            <th>Id</th>
+                            <th>Group</th>
+                            <th>Teacher</th>
+                            <th>Classroom</th>
+                            <th>Discipline</th>
+                            <th>Day</th>
+                            <th>Pair</th>
+                            <th>Week</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in scheduleItems)
+                        {
+                            <tr>
+                                <td style="font-weight: 600;">@item.Id</td>
+                                <td>@item.GroupName</td>
+                                <td>@item.TeacherName</td>
+                                <td>@item.ClassroomName</td>
+                                <td>@item.DisciplineName</td>
+                                <td><span class="badge bg-secondary">@item.DayOfWeek</span></td>
+                                <td>@item.LessonNumber</td>
+                                <td><span class="badge bg-info text-dark">@item.WeekType</span></td>
+                                <td class="text-end">
+                                    <button class="btn btn-outline-warning btn-sm me-1" @onclick="() => EditLesson(item)" style="border-radius: 6px;">
+                                        Edit
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteLesson(item.Id)" style="border-radius: 6px;">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else if (activeTab == Tab.Departments)
+        {
+            <!-- DEPARTMENTS TAB -->
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="p-3 bg-light" style="border-radius: 12px;">
+                        <h5 style="font-weight: 700; color: #2d3748;">@(editingDeptId == 0 ? "Add Department" : "Edit Department")</h5>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Department Name</label>
+                            <input type="text" class="form-control" @bind="newDepartment.Name" placeholder="e.g. Кафедра ІПЗ" style="border-radius: 8px;" />
+                        </div>
+                        <button class="btn btn-primary w-100" @onclick="SaveDepartment" style="border-radius: 8px; font-weight: 600;">
+                            @(editingDeptId == 0 ? "Add" : "Update") Department
+                        </button>
+                        @if (editingDeptId != 0)
+                        {
+                            <button class="btn btn-link w-100 mt-1" @onclick="ClearDeptEdit">Cancel Edit</button>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <h5 style="font-weight: 700; color: #2d3748;" class="mb-3">Departments List</h5>
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var dep in departments)
+                            {
+                                <tr>
+                                    <td>@dep.Id</td>
+                                    <td style="font-weight: 600;">@dep.Name</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-warning me-1" @onclick="() => StartEditDept(dep)">Edit</button>
+                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteDepartment(dep.Id)">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else if (activeTab == Tab.Groups)
+        {
+            <!-- GROUPS TAB -->
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="p-3 bg-light" style="border-radius: 12px;">
+                        <h5 style="font-weight: 700; color: #2d3748;">@(editingGroupId == 0 ? "Add Group" : "Edit Group")</h5>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Group Name</label>
+                            <input type="text" class="form-control" @bind="newGroup.Name" placeholder="e.g. ПІ-221" style="border-radius: 8px;" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Department</label>
+                            <select @bind="newGroup.DepartmentId" class="form-select" style="border-radius: 8px;">
+                                <option value="0">Select Department</option>
+                                @foreach (var dep in departments)
+                                {
+                                    <option value="@dep.Id">@dep.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <button class="btn btn-primary w-100" @onclick="SaveGroup" style="border-radius: 8px; font-weight: 600;">
+                            @(editingGroupId == 0 ? "Add" : "Update") Group
+                        </button>
+                        @if (editingGroupId != 0)
+                        {
+                            <button class="btn btn-link w-100 mt-1" @onclick="ClearGroupEdit">Cancel Edit</button>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <h5 style="font-weight: 700; color: #2d3748;" class="mb-3">Groups List</h5>
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Department</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var g in groups)
+                            {
+                                <tr>
+                                    <td>@g.Id</td>
+                                    <td style="font-weight: 600;">@g.Name</td>
+                                    <td>@g.DepartmentName</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-warning me-1" @onclick="() => StartEditGroup(g)">Edit</button>
+                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteGroup(g.Id)">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else if (activeTab == Tab.Teachers)
+        {
+            <!-- TEACHERS TAB -->
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="p-3 bg-light" style="border-radius: 12px;">
+                        <h5 style="font-weight: 700; color: #2d3748;">@(editingTeacherId == 0 ? "Add Teacher" : "Edit Teacher")</h5>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Full Name</label>
+                            <input type="text" class="form-control" @bind="newTeacher.Name" placeholder="e.g. Коваленко І.І." style="border-radius: 8px;" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Degree</label>
+                            <select @bind="newTeacher.Degree" class="form-select" style="border-radius: 8px;">
+                                <option value="">Select Degree</option>
+                                @foreach (var degree in BLL.Helpers.TeacherDegreeHelper.AllowedDegrees)
+                                {
+                                    <option value="@degree">@degree</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Department</label>
+                            <select @bind="newTeacher.DepartmentId" class="form-select" style="border-radius: 8px;">
+                                <option value="0">Select Department</option>
+                                @foreach (var dep in departments)
+                                {
+                                    <option value="@dep.Id">@dep.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Linked User Account ID (Optional)</label>
+                            <input type="number" class="form-control" @bind="newTeacher.UserId" style="border-radius: 8px;" />
+                        </div>
+                        <button class="btn btn-primary w-100" @onclick="SaveTeacher" style="border-radius: 8px; font-weight: 600;">
+                            @(editingTeacherId == 0 ? "Add" : "Update") Teacher
+                        </button>
+                        @if (editingTeacherId != 0)
+                        {
+                            <button class="btn btn-link w-100 mt-1" @onclick="ClearTeacherEdit">Cancel Edit</button>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <h5 style="font-weight: 700; color: #2d3748;" class="mb-3">Teachers List</h5>
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Degree</th>
+                                <th>Department</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var t in teachers)
+                            {
+                                <tr>
+                                    <td>@t.Id</td>
+                                    <td style="font-weight: 600;">@t.Name</td>
+                                    <td>@t.Degree</td>
+                                    <td>@t.DepartmentName</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-warning me-1" @onclick="() => StartEditTeacher(t)">Edit</button>
+                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteTeacher(t.Id)">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else if (activeTab == Tab.Classrooms)
+        {
+            <!-- CLASSROOMS TAB -->
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="p-3 bg-light" style="border-radius: 12px;">
+                        <h5 style="font-weight: 700; color: #2d3748;">@(editingRoomId == 0 ? "Add Classroom" : "Edit Classroom")</h5>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Classroom Name</label>
+                            <input type="text" class="form-control" @bind="newClassroom.Name" placeholder="e.g. 1-305" style="border-radius: 8px;" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Building</label>
+                            <input type="text" class="form-control" @bind="newClassroom.Building" placeholder="e.g. Корпус 1" style="border-radius: 8px;" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Capacity</label>
+                            <input type="number" class="form-control" @bind="newClassroom.Capacity" min="1" style="border-radius: 8px;" />
+                        </div>
+                        <button class="btn btn-primary w-100" @onclick="SaveClassroom" style="border-radius: 8px; font-weight: 600;">
+                            @(editingRoomId == 0 ? "Add" : "Update") Classroom
+                        </button>
+                        @if (editingRoomId != 0)
+                        {
+                            <button class="btn btn-link w-100 mt-1" @onclick="ClearRoomEdit">Cancel Edit</button>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <h5 style="font-weight: 700; color: #2d3748;" class="mb-3">Classrooms List</h5>
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Building</th>
+                                <th>Capacity</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in classrooms)
+                            {
+                                <tr>
+                                    <td>@c.Id</td>
+                                    <td style="font-weight: 600;">@c.Name</td>
+                                    <td>@c.Building</td>
+                                    <td>@c.Capacity students</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-warning me-1" @onclick="() => StartEditRoom(c)">Edit</button>
+                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteClassroom(c.Id)">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else if (activeTab == Tab.Disciplines)
+        {
+            <!-- DISCIPLINES TAB -->
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="p-3 bg-light" style="border-radius: 12px;">
+                        <h5 style="font-weight: 700; color: #2d3748;">@(editingDiscId == 0 ? "Add Discipline" : "Edit Discipline")</h5>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Discipline Name</label>
+                            <input type="text" class="form-control" @bind="newDiscipline.Name" placeholder="e.g. Бази даних" style="border-radius: 8px;" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Department Connection</label>
+                            <select @bind="newDiscipline.DepartmentId" class="form-select" style="border-radius: 8px;">
+                                <option value="0">Select Department</option>
+                                @foreach (var dep in departments)
+                                {
+                                    <option value="@dep.Id">@dep.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <button class="btn btn-primary w-100" @onclick="SaveDiscipline" style="border-radius: 8px; font-weight: 600;">
+                            @(editingDiscId == 0 ? "Add" : "Update") Discipline
+                        </button>
+                        @if (editingDiscId != 0)
+                        {
+                            <button class="btn btn-link w-100 mt-1" @onclick="ClearDiscEdit">Cancel Edit</button>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <h5 style="font-weight: 700; color: #2d3748;" class="mb-3">Disciplines List</h5>
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var d in disciplines)
+                            {
+                                <tr>
+                                    <td>@d.Id</td>
+                                    <td style="font-weight: 600;">@d.Name</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-warning me-1" @onclick="() => StartEditDisc(d)">Edit</button>
+                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteDiscipline(d.Id)">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
 
     </div>
 
 </div>
 
-<button class="btn btn-primary mb-3"
-        @onclick="CreateNew">
-    Add Lesson
-</button>
-
-@if (showAdminPanel)
-{
-    <div class="card mt-4">
-        <div class="card-header">
-            <h4>Admin Panel</h4>
-        </div>
-
-        <div class="card-body">
-
-            <h5>Add Department</h5>
-
-            <InputSelect @bind-Value="newDepartment.Name"
-                         class="form-select">
-
-                @foreach (var dep in Enum.GetValues<DepartmentName>())
-                {
-                    <option value="@dep">@dep</option>
-                }
-
-            </InputSelect>
-
-            <button class="btn btn-success mt-2"
-                    @onclick="AddDepartment">
-                Add Department
-            </button>
-
-            <hr />
-
-            <h5>Add Discipline</h5>
-
-            <InputText class="form-control"
-                       @bind-Value="newDiscipline.Name" />
-
-            <button class="btn btn-success mt-2"
-                    @onclick="AddDiscipline">
-                Add Discipline
-            </button>
-
-            <hr />
-
-            <h5>Add Group</h5>
-
-            <InputText class="form-control"
-                       @bind-Value="newGroup.Name" />
-
-            <button class="btn btn-success mt-2"
-                    @onclick="AddGroup">
-                Add Group
-            </button>
-
-            <hr />
-
-            <h5>Add Teacher</h5>
-
-            <InputText class="form-control"
-                       @bind-Value="newTeacher.Name" />
-
-            <button class="btn btn-success mt-2"
-                    @onclick="AddTeacher">
-                Add Teacher
-            </button>
-
-            <hr />
-
-            <h5>Add Classroom</h5>
-
-            <InputSelect @bind-Value="newClassroom.Name"
-                         class="form-select">
-
-                @foreach (var dep in Enum.GetValues<ClassroomName>())
-                {
-                    <option value="@dep">@dep</option>
-                }
-            </InputSelect>
-
-            <button class="btn btn-success mt-2"
-                    @onclick="AddClassroom">
-                Add Classroom
-            </button>
-
-        </div>
-    </div>
-}
-
-<table class="table table-striped">
-
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Group</th>
-            <th>Teacher</th>
-            <th>Classroom</th>
-            <th>Discipline</th>
-            <th>Day</th>
-            <th>Lesson</th>
-            <th>Week</th>
-            <th></th>
-        </tr>
-    </thead>
-
-    <tbody>
-
-        @foreach (var item in scheduleItems)
-        {
-            <tr>
-
-                <td>@item.Id</td>
-
-                <td>@item.GroupName</td>
-
-                <td>@item.TeacherName</td>
-
-                <td>@item.ClassroomName</td>
-
-                <td>@item.DisciplineName</td>
-
-                <td>@item.DayOfWeek</td>
-
-                <td>@item.LessonNumber</td>
-
-                <td>@item.WeekType</td>
-
-                <td>
-
-                    <button class="btn btn-warning btn-sm"
-                            @onclick="() => EditLesson(item)">
-                        Edit
-                    </button>
-
-                    <button class="btn btn-danger btn-sm ms-2"
-                            @onclick="() => DeleteLesson(item.Id)">
-                        Delete
-                    </button>
-
-                </td>
-
-            </tr>
-        }
-
-    </tbody>
-
-</table>
-
 @code {
+    private enum Tab { Schedule, Departments, Groups, Teachers, Classrooms, Disciplines }
+    private Tab activeTab = Tab.Schedule;
 
     private List<ScheduleItemInfo> scheduleItems = new();
-
     private CreateScheduleItemRequest model = new();
 
     private bool isEditMode;
     private int editingId;
     private string? errorMessage;
+    private string? successMessage;
 
+    private List<DepartmentInfo> departments = new();
     private List<GroupInfo> groups = new();
     private List<TeacherInfo> teachers = new();
     private List<ClassroomInfo> classrooms = new();
     private List<DisciplineInfo> disciplines = new();
 
+    // References models
     private CreateDepartmentRequest newDepartment = new();
-    private CreateDisciplineRequest newDiscipline = new();
     private CreateGroupRequest newGroup = new();
     private CreateTeacherRequest newTeacher = new();
     private CreateClassroomRequest newClassroom = new();
+    private CreateDisciplineRequest newDiscipline = new();
+
+    // Edit states for references
+    private int editingDeptId;
+    private int editingGroupId;
+    private int editingTeacherId;
+    private int editingRoomId;
+    private int editingDiscId;
 
     protected override async Task OnInitializedAsync()
     {
+        if (!Session.IsAuthenticated || (!Session.IsAdmin && !Session.IsEditor))
+        {
+            Navigation.NavigateTo("/schedule");
+            return;
+        }
         await LoadData();
     }
 
     private async Task LoadData()
     {
-        scheduleItems =
-            await ScheduleService.GetAllScheduleItemsAsync();
-
-        groups =
-            (await ScheduleService.GetGroupsAsync()).ToList();
-
-        teachers =
-            (await ScheduleService.GetTeachersAsync()).ToList();
-
-        classrooms =
-            (await ScheduleService.GetClassroomsAsync()).ToList();
-
-        disciplines =
-            (await ScheduleService.GetDisciplinesAsync()).ToList();
+        try
+        {
+            scheduleItems = await ScheduleService.GetAllScheduleItemsAsync();
+            groups = (await ScheduleService.GetGroupsAsync()).ToList();
+            teachers = (await ScheduleService.GetTeachersAsync()).ToList();
+            classrooms = (await ScheduleService.GetClassroomsAsync()).ToList();
+            disciplines = (await ScheduleService.GetDisciplinesAsync()).ToList();
+            departments = (await ScheduleService.GetDepartmentsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error loading data: " + ex.Message;
+        }
     }
 
-    private void CreateNew()
+    private void SwitchTab(Tab tab)
     {
-        ClearForm();
+        activeTab = tab;
+        errorMessage = null;
+        successMessage = null;
     }
 
     private void EditLesson(ScheduleItemInfo item)
     {
         isEditMode = true;
-
         editingId = item.Id;
-
         model = new CreateScheduleItemRequest
         {
             GroupId = item.GroupId,
@@ -373,6 +603,12 @@
         try
         {
             errorMessage = null;
+            successMessage = null;
+
+            if (model.GroupId == 0 || model.TeacherId == 0 || model.ClassroomId == 0 || model.DisciplineId == 0)
+            {
+                throw new Exception("Please select a group, teacher, classroom, and discipline.");
+            }
 
             if (isEditMode)
             {
@@ -387,17 +623,18 @@
                     WeekType = model.WeekType
                 };
 
-                await ScheduleService.UpdateScheduleItemAsync(
-                    editingId,
-                    request);
+                var ok = await ScheduleService.UpdateScheduleItemAsync(editingId, request);
+                if (!ok) throw new Exception("API error updating schedule item. Make sure there are no scheduling conflicts.");
+                successMessage = "Lesson schedule item updated successfully!";
             }
             else
             {
-                await ScheduleService.CreateScheduleItemAsync(model);
+                var ok = await ScheduleService.CreateScheduleItemAsync(model);
+                if (!ok) throw new Exception("API error creating schedule item. Make sure there are no scheduling conflicts.");
+                successMessage = "New lesson scheduled successfully!";
             }
 
             await LoadData();
-
             ClearForm();
         }
         catch (Exception ex)
@@ -411,9 +648,10 @@
         try
         {
             errorMessage = null;
-
-            await ScheduleService.DeleteScheduleItemAsync(id);
-
+            successMessage = null;
+            var ok = await ScheduleService.DeleteScheduleItemAsync(id);
+            if (!ok) throw new Exception("API error deleting schedule item.");
+            successMessage = "Lesson deleted successfully.";
             await LoadData();
         }
         catch (Exception ex)
@@ -422,59 +660,376 @@
         }
     }
 
-    private bool showAdminPanel;
-
-    private void OpenAdminPanel()
+    // ==========================================
+    // Departments Management
+    // ==========================================
+    private void StartEditDept(DepartmentInfo dep)
     {
-        showAdminPanel = !showAdminPanel;
+        editingDeptId = dep.Id;
+        newDepartment.Name = dep.Name;
     }
 
-    private async Task AddDepartment()
+    private void ClearDeptEdit()
     {
-        await ScheduleService.AddDepartmentAsync(
-            newDepartment);
-
+        editingDeptId = 0;
         newDepartment = new();
     }
 
-    private async Task AddDiscipline()
+    private async Task SaveDepartment()
     {
-        await ScheduleService.AddDisciplineAsync(
-            newDiscipline);
+        try
+        {
+            errorMessage = null;
+            successMessage = null;
 
-        newDiscipline = new();
+            if (string.IsNullOrWhiteSpace(newDepartment.Name))
+            {
+                throw new Exception("Department Name is required.");
+            }
+
+            bool ok;
+            if (editingDeptId == 0)
+            {
+                ok = await ScheduleService.AddDepartmentAsync(newDepartment);
+                if (!ok) throw new Exception("Could not add department. It might already exist.");
+                successMessage = "Department added successfully!";
+            }
+            else
+            {
+                var req = new UpdateDepartmentRequest { Name = newDepartment.Name };
+                ok = await ScheduleService.UpdateDepartmentAsync(editingDeptId, req);
+                if (!ok) throw new Exception("Could not update department. Name might be duplicated.");
+                successMessage = "Department updated successfully!";
+            }
+
+            await LoadData();
+            ClearDeptEdit();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
     }
 
-    private async Task AddGroup()
+    private async Task DeleteDepartment(int id)
     {
-        await ScheduleService.AddGroupAsync(
-            newGroup);
+        try
+        {
+            errorMessage = null;
+            successMessage = null;
+            var ok = await ScheduleService.DeleteDepartmentAsync(id);
+            if (!ok) throw new Exception("Could not delete department. It might be referenced by groups or teachers.");
+            successMessage = "Department deleted successfully.";
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
 
+    // ==========================================
+    // Groups Management
+    // ==========================================
+    private void StartEditGroup(GroupInfo g)
+    {
+        editingGroupId = g.Id;
+        newGroup.Name = g.Name;
+        newGroup.DepartmentId = g.DepartmentId;
+    }
+
+    private void ClearGroupEdit()
+    {
+        editingGroupId = 0;
         newGroup = new();
     }
 
-    private async Task AddTeacher()
+    private async Task SaveGroup()
     {
-        await ScheduleService.AddTeacherAsync(
-            newTeacher);
+        try
+        {
+            errorMessage = null;
+            successMessage = null;
 
+            if (string.IsNullOrWhiteSpace(newGroup.Name) || newGroup.DepartmentId == 0)
+            {
+                throw new Exception("Group Name and Department are required.");
+            }
+
+            bool ok;
+            if (editingGroupId == 0)
+            {
+                ok = await ScheduleService.AddGroupAsync(newGroup);
+                if (!ok) throw new Exception("Could not add group. Check format (e.g., XX-00) or check if it already exists.");
+                successMessage = "Group added successfully!";
+            }
+            else
+            {
+                var req = new UpdateGroupRequest { Name = newGroup.Name, DepartmentId = newGroup.DepartmentId };
+                ok = await ScheduleService.UpdateGroupAsync(editingGroupId, req);
+                if (!ok) throw new Exception("Could not update group. Check name format or duplicate names.");
+                successMessage = "Group updated successfully!";
+            }
+
+            await LoadData();
+            ClearGroupEdit();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteGroup(int id)
+    {
+        try
+        {
+            errorMessage = null;
+            successMessage = null;
+            var ok = await ScheduleService.DeleteGroupAsync(id);
+            if (!ok) throw new Exception("Could not delete group. It might be referenced by schedule items.");
+            successMessage = "Group deleted successfully.";
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    // ==========================================
+    // Teachers Management
+    // ==========================================
+    private void StartEditTeacher(TeacherInfo t)
+    {
+        editingTeacherId = t.Id;
+        newTeacher.Name = t.Name;
+        try
+        {
+            newTeacher.Degree = BLL.Helpers.TeacherDegreeHelper.ValidateAndNormalizeDegree(t.Degree);
+        }
+        catch
+        {
+            newTeacher.Degree = "";
+        }
+        newTeacher.DepartmentId = t.DepartmentId;
+        newTeacher.UserId = t.UserId;
+    }
+
+    private void ClearTeacherEdit()
+    {
+        editingTeacherId = 0;
         newTeacher = new();
     }
 
-    private async Task AddClassroom()
+    private async Task SaveTeacher()
     {
-        await ScheduleService.AddClassroomAsync(
-            newClassroom);
+        try
+        {
+            errorMessage = null;
+            successMessage = null;
 
+            if (string.IsNullOrWhiteSpace(newTeacher.Name) || string.IsNullOrWhiteSpace(newTeacher.Degree) || newTeacher.DepartmentId == 0)
+            {
+                throw new Exception("Teacher Name, Degree and Department are required.");
+            }
+
+            bool ok;
+            if (editingTeacherId == 0)
+            {
+                ok = await ScheduleService.AddTeacherAsync(newTeacher);
+                if (!ok) throw new Exception("Could not add teacher. A teacher with this name might already exist in this department.");
+                successMessage = "Teacher added successfully!";
+            }
+            else
+            {
+                var req = new UpdateTeacherRequest 
+                { 
+                    Name = newTeacher.Name, 
+                    Degree = newTeacher.Degree, 
+                    DepartmentId = newTeacher.DepartmentId, 
+                    UserId = newTeacher.UserId 
+                };
+                ok = await ScheduleService.UpdateTeacherAsync(editingTeacherId, req);
+                if (!ok) throw new Exception("Could not update teacher. Duplicate name in this department.");
+                successMessage = "Teacher updated successfully!";
+            }
+
+            await LoadData();
+            ClearTeacherEdit();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteTeacher(int id)
+    {
+        try
+        {
+            errorMessage = null;
+            successMessage = null;
+            var ok = await ScheduleService.DeleteTeacherAsync(id);
+            if (!ok) throw new Exception("Could not delete teacher. They might be referenced in schedule items.");
+            successMessage = "Teacher deleted successfully.";
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    // ==========================================
+    // Classrooms Management
+    // ==========================================
+    private void StartEditRoom(ClassroomInfo c)
+    {
+        editingRoomId = c.Id;
+        newClassroom.Name = c.Name;
+        newClassroom.Building = c.Building;
+        newClassroom.Capacity = c.Capacity;
+    }
+
+    private void ClearRoomEdit()
+    {
+        editingRoomId = 0;
         newClassroom = new();
+    }
+
+    private async Task SaveClassroom()
+    {
+        try
+        {
+            errorMessage = null;
+            successMessage = null;
+
+            if (string.IsNullOrWhiteSpace(newClassroom.Name) || string.IsNullOrWhiteSpace(newClassroom.Building) || newClassroom.Capacity <= 0)
+            {
+                throw new Exception("Name, Building, and positive Capacity are required.");
+            }
+
+            bool ok;
+            if (editingRoomId == 0)
+            {
+                ok = await ScheduleService.AddClassroomAsync(newClassroom);
+                if (!ok) throw new Exception("Could not add classroom. It might already exist in this building.");
+                successMessage = "Classroom added successfully!";
+            }
+            else
+            {
+                var req = new UpdateClassroomRequest 
+                { 
+                    Name = newClassroom.Name, 
+                    Building = newClassroom.Building, 
+                    Capacity = newClassroom.Capacity 
+                };
+                ok = await ScheduleService.UpdateClassroomAsync(editingRoomId, req);
+                if (!ok) throw new Exception("Could not update classroom. Duplicate name in this building.");
+                successMessage = "Classroom updated successfully!";
+            }
+
+            await LoadData();
+            ClearRoomEdit();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteClassroom(int id)
+    {
+        try
+        {
+            errorMessage = null;
+            successMessage = null;
+            var ok = await ScheduleService.DeleteClassroomAsync(id);
+            if (!ok) throw new Exception("Could not delete classroom. It might be referenced in schedule items.");
+            successMessage = "Classroom deleted successfully.";
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    // ==========================================
+    // Disciplines Management
+    // ==========================================
+    private void StartEditDisc(DisciplineInfo d)
+    {
+        editingDiscId = d.Id;
+        newDiscipline.Name = d.Name;
+        // Find existing department to pre-select, or default to 0
+        newDiscipline.DepartmentId = d.DepartmentId;
+    }
+
+    private void ClearDiscEdit()
+    {
+        editingDiscId = 0;
+        newDiscipline = new();
+    }
+
+    private async Task SaveDiscipline()
+    {
+        try
+        {
+            errorMessage = null;
+            successMessage = null;
+
+            if (string.IsNullOrWhiteSpace(newDiscipline.Name) || newDiscipline.DepartmentId == 0)
+            {
+                throw new Exception("Discipline Name and Department connection are required.");
+            }
+
+            bool ok;
+            if (editingDiscId == 0)
+            {
+                ok = await ScheduleService.AddDisciplineAsync(newDiscipline);
+                if (!ok) throw new Exception("Could not add discipline. It might already exist in this department.");
+                successMessage = "Discipline added successfully!";
+            }
+            else
+            {
+                var req = new UpdateDisciplineRequest { Name = newDiscipline.Name, DepartmentId = newDiscipline.DepartmentId };
+                ok = await ScheduleService.UpdateDisciplineAsync(editingDiscId, req);
+                if (!ok) throw new Exception("Could not update discipline. Duplicate name in this department.");
+                successMessage = "Discipline updated successfully!";
+            }
+
+            await LoadData();
+            ClearDiscEdit();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteDiscipline(int id)
+    {
+        try
+        {
+            errorMessage = null;
+            successMessage = null;
+            var ok = await ScheduleService.DeleteDisciplineAsync(id);
+            if (!ok) throw new Exception("Could not delete discipline. It might be referenced in schedule items.");
+            successMessage = "Discipline deleted successfully.";
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
     }
 
     private void ClearForm()
     {
         model = new CreateScheduleItemRequest();
-
         editingId = 0;
-
         isEditMode = false;
     }
 

@@ -21,10 +21,30 @@ public class GenericRepo<T> : IRepository<T> where T : class
     {
         return await _dbSet.FindAsync(id);
     }
+
+    public virtual async Task<T?> GetAsync(int id, params System.Linq.Expressions.Expression<Func<T, object>>[] includeProperties)
+    {
+        IQueryable<T> query = _dbSet;
+        foreach (var includeProperty in includeProperties)
+        {
+            query = query.Include(includeProperty);
+        }
+        return await query.FirstOrDefaultAsync(e => Microsoft.EntityFrameworkCore.EF.Property<int>(e, "Id") == id);
+    }
     
     public virtual async Task<IEnumerable<T>> GetAllAsync()
     {
         return await _dbSet.ToListAsync();
+    }
+
+    public virtual async Task<IEnumerable<T>> GetAllAsync(params System.Linq.Expressions.Expression<Func<T, object>>[] includeProperties)
+    {
+        IQueryable<T> query = _dbSet;
+        foreach (var includeProperty in includeProperties)
+        {
+            query = query.Include(includeProperty);
+        }
+        return await query.ToListAsync();
     }
     
     public async Task CreateAsync(T item)
