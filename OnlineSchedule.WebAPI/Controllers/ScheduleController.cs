@@ -1,4 +1,4 @@
-﻿using CONTRACT.DTO;
+using CONTRACT.DTO;
 
 using Microsoft.AspNetCore.Mvc;
 
@@ -299,62 +299,238 @@ namespace WebAPI.Controllers
         [HttpPost("departments")]
         public async Task<ActionResult> AddDepartment(CreateDepartmentRequest request)
         {
-            await scheduleManager
-                .CreateDepartmentAsync(
-                CurrentUserId,
-                request.Name);
+            try
+            {
+                await scheduleManager
+                    .CreateDepartmentAsync(
+                    CurrentUserId,
+                    request.Name);
 
-            return Ok();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
+        }
+
+        [HttpPut("departments/{id}")]
+        public async Task<ActionResult> UpdateDepartment(int id, UpdateDepartmentRequest request)
+        {
+            try
+            {
+                await scheduleManager.UpdateDepartmentAsync(CurrentUserId, id, request.Name);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
+        }
+
+        [HttpDelete("departments/{id}")]
+        public async Task<ActionResult> DeleteDepartment(int id)
+        {
+            try
+            {
+                await scheduleManager.DeleteDepartmentAsync(CurrentUserId, id);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
         }
 
         [HttpPost("groups")]
         public async Task<ActionResult> AddGroup(CreateGroupRequest request)
         {
-            await scheduleManager
-                .CreateGroupAsync(
-                CurrentUserId,
-                request.Name,
-                request.DepartmentId);
+            try
+            {
+                await scheduleManager
+                    .CreateGroupAsync(
+                    CurrentUserId,
+                    request.Name,
+                    request.DepartmentId);
 
-            return Ok();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
+        }
+
+        [HttpPut("groups/{id}")]
+        public async Task<ActionResult> UpdateGroup(int id, UpdateGroupRequest request)
+        {
+            try
+            {
+                await scheduleManager.UpdateGroupAsync(CurrentUserId, id, request.Name, request.DepartmentId);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
+        }
+
+        [HttpDelete("groups/{id}")]
+        public async Task<ActionResult> DeleteGroup(int id)
+        {
+            try
+            {
+                await scheduleManager.DeleteGroupAsync(CurrentUserId, id);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
         }
 
         [HttpPost("teachers")]
         public async Task<ActionResult> AddTeacher(CreateTeacherRequest request)
         {
-            await scheduleManager
-                .CreateTeacherAsync(
-                CurrentUserId,
-                request.Name,
-                request.Degree,
-                request.DepartmentId,
-                request.UserId);
+            try
+            {
+                await scheduleManager
+                    .CreateTeacherAsync(
+                    CurrentUserId,
+                    request.Name,
+                    request.Degree,
+                    request.DepartmentId,
+                    request.UserId);
 
-            return Ok();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
+        }
+
+        [HttpPut("teachers/{id}")]
+        public async Task<ActionResult> UpdateTeacher(int id, UpdateTeacherRequest request)
+        {
+            try
+            {
+                await scheduleManager.UpdateTeacherAsync(CurrentUserId, id, request.Name, request.Degree, request.DepartmentId, request.UserId);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
+        }
+
+        [HttpDelete("teachers/{id}")]
+        public async Task<ActionResult> DeleteTeacher(int id)
+        {
+            try
+            {
+                await scheduleManager.DeleteTeacherAsync(CurrentUserId, id);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
         }
 
         [HttpPost("classrooms")]
         public async Task<ActionResult> AddClassroom(CreateClassroomRequest request)
         {
-            await scheduleManager
-                .CreateClassroomAsync(
-                CurrentUserId,
-                request.Name,
-                request.Building,
-                request.Capacity);
+            try
+            {
+                await scheduleManager
+                    .CreateClassroomAsync(
+                    CurrentUserId,
+                    request.Name,
+                    request.Building,
+                    request.Capacity);
 
-            return Ok();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
+        }
+
+        [HttpPut("classrooms/{id}")]
+        public async Task<ActionResult> UpdateClassroom(int id, UpdateClassroomRequest request)
+        {
+            try
+            {
+                await scheduleManager.UpdateClassroomAsync(CurrentUserId, id, request.Name, request.Building, request.Capacity);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
+        }
+
+        [HttpDelete("classrooms/{id}")]
+        public async Task<ActionResult> DeleteClassroom(int id)
+        {
+            try
+            {
+                await scheduleManager.DeleteClassroomAsync(CurrentUserId, id);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
         }
 
         [HttpPost("disciplines")]
         public async Task<ActionResult> AddDiscipline(CreateDisciplineRequest request)
         {
-            await scheduleManager
-                .CreateDisciplineAsync(
-                CurrentUserId,
-                request.Name);
+            try
+            {
+                await scheduleManager
+                    .CreateDisciplineAsync(
+                    CurrentUserId,
+                    request.Name,
+                    request.DepartmentId);
 
-            return Ok();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
+        }
+
+        [HttpPut("disciplines/{id}")]
+        public async Task<ActionResult> UpdateDiscipline(int id, UpdateDisciplineRequest request)
+        {
+            try
+            {
+                await scheduleManager.UpdateDisciplineAsync(CurrentUserId, id, request.Name, request.DepartmentId);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
+        }
+
+        [HttpDelete("disciplines/{id}")]
+        public async Task<ActionResult> DeleteDiscipline(int id)
+        {
+            try
+            {
+                await scheduleManager.DeleteDisciplineAsync(CurrentUserId, id);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex);
+            }
         }
     }
 }

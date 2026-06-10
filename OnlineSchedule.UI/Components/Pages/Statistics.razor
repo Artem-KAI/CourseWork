@@ -1,15 +1,388 @@
 ﻿@page "/statistics"
 
+@using CONTRACT.DTO
+
 @inject UserSessionService Session
 @inject NavigationManager Navigation
+@inject ApiStatisticsService StatisticsService
+@inject ApiScheduleService ScheduleService
+
+<PageTitle>Statistics</PageTitle>
+
+@if (!Session.IsAuthenticated || !(Session.IsManagement || Session.IsAdmin))
+{
+    <div class="alert alert-danger">
+        Access denied.
+    </div>
+}
+else
+{
+    <h4 class="mb-4">Schedule Statistics</h4>
+
+    <!-- KPI Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card p-3 bg-light">
+                <div class="text-muted small">Total Lessons</div>
+                <div class="fs-4 fw-bold">@ScheduleItems.Count</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 bg-light">
+                <div class="text-muted small">Busiest Teacher</div>
+                <div class="fs-5 fw-bold text-truncate" title="@(TeacherStats.FirstOrDefault()?.TeacherName ?? "N/A")">
+                    @(TeacherStats.FirstOrDefault()?.TeacherName ?? "N/A")
+                </div>
+                <div class="small">Lessons: @(TeacherStats.FirstOrDefault()?.TotalLessons ?? 0)</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 bg-light">
+                <div class="text-muted small">Busiest Group</div>
+                <div class="fs-4 fw-bold text-truncate" title="@(GroupStats.FirstOrDefault()?.GroupName ?? "N/A")">
+                    @(GroupStats.FirstOrDefault()?.GroupName ?? "N/A")
+                </div>
+                <div class="small">Lessons: @(GroupStats.FirstOrDefault()?.TotalLessons ?? 0)</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 bg-light">
+                <div class="text-muted small">Busiest Classroom</div>
+                <div class="fs-4 fw-bold text-truncate" title="@(ClassroomStats.FirstOrDefault()?.ClassroomName ?? "N/A")">
+                    @(ClassroomStats.FirstOrDefault()?.ClassroomName ?? "N/A")
+                </div>
+                <div class="small">Utilization: @(ClassroomStats.FirstOrDefault()?.UtilizationPercentage.ToString("F1") ?? "0")%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="btn-group mb-3">
+        <button class="btn @(ActiveTab == 0 ? "btn-primary" : "btn-outline-primary")"
+                @onclick="() => { ActiveTab = 0; SearchQuery = string.Empty; }">
+            Teachers
+        </button>
+        <button class="btn @(ActiveTab == 1 ? "btn-primary" : "btn-outline-primary")"
+                @onclick="() => { ActiveTab = 1; SearchQuery = string.Empty; }">
+            Groups
+        </button>
+        <button class="btn @(ActiveTab == 2 ? "btn-primary" : "btn-outline-primary")"
+                @onclick="() => { ActiveTab = 2; SearchQuery = string.Empty; }">
+            Classrooms
+        </button>
+        <button class="btn @(ActiveTab == 3 ? "btn-primary" : "btn-outline-primary")"
+                @onclick="() => { ActiveTab = 3; SearchQuery = string.Empty; }">
+            Schedule Analysis
+        </button>
+    </div>
+
+    <!-- Search Input -->
+    @if (ActiveTab != 3)
+    {
+        <div class="mb-3" style="max-width: 300px;">
+            <input type="text" class="form-control" placeholder="Search..." @bind="SearchQuery" @bind:event="oninput" />
+        </div>
+    }
+
+    <!-- Content Sections -->
+    @if (ActiveTab == 0)
+    {
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Teacher</th>
+                    <th>Lessons</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (FilteredTeachers.Any())
+                {
+                    @foreach (var teacher in FilteredTeachers)
+                    {
+                        <tr>
+                            <td>@teacher.TeacherName</td>
+                            <td>@teacher.TotalLessons</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="2" class="text-muted text-center py-3">No results found for "@SearchQuery"</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (ActiveTab == 1)
+    {
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Group</th>
+                    <th>Total Lessons</th>
+                    <th>Average Per Day</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (FilteredGroups.Any())
+                {
+                    @foreach (var grp in FilteredGroups)
+                    {
+                        <tr>
+                            <td>@grp.GroupName</td>
+                            <td>@grp.TotalLessons</td>
+                            <td>@grp.AverageLessonsPerDay.ToString("F2")</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="3" class="text-muted text-center py-3">No results found for "@SearchQuery"</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (ActiveTab == 2)
+    {
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Classroom</th>
+                    <th>Occupied Slots</th>
+                    <th>Utilization %</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (FilteredClassrooms.Any())
+                {
+                    @foreach (var classroom in FilteredClassrooms)
+                    {
+                        <tr>
+                            <td>@classroom.ClassroomName</td>
+                            <td>@classroom.OccupiedSlotsCount</td>
+                            <td>@classroom.UtilizationPercentage.ToString("F2")%</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="3" class="text-muted text-center py-3">No results found for "@SearchQuery"</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (ActiveTab == 3)
+    {
+        <div class="row">
+            <!-- Day of Week Distribution -->
+            <div class="col-md-6 mb-4">
+                <h5>Day of Week Load</h5>
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Day</th>
+                            <th>Lessons</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (ScheduleItems.Any())
+                        {
+                            @foreach (var day in DayOfWeekDist)
+                            {
+                                <tr>
+                                    <td>@day.Key.ToString()</td>
+                                    <td>@day.Value</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="2" class="text-muted text-center py-3">No schedule data available.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Lesson Period Distribution -->
+            <div class="col-md-6 mb-4">
+                <h5>Lessons by Period</h5>
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Lessons</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (ScheduleItems.Any())
+                        {
+                            @foreach (var lesson in LessonNumberDist)
+                            {
+                                <tr>
+                                    <td>Period @lesson.Key</td>
+                                    <td>@lesson.Value</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="2" class="text-muted text-center py-3">No schedule data available.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Week Type Distribution -->
+            <div class="col-md-6 mb-4">
+                <h5>Week Type Distribution</h5>
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Week Type</th>
+                            <th>Lessons</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (ScheduleItems.Any())
+                        {
+                            @foreach (var week in WeekTypeDist)
+                            {
+                                <tr>
+                                    <td>@GetWeekTypeName(week.Key)</td>
+                                    <td>@week.Value</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="2" class="text-muted text-center py-3">No schedule data available.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Top 5 Disciplines -->
+            <div class="col-md-6 mb-4">
+                <h5>Top 5 Academic Disciplines</h5>
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Discipline</th>
+                            <th>Lessons</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (TopDisciplines.Any())
+                        {
+                            @foreach (var disc in TopDisciplines)
+                            {
+                                <tr>
+                                    <td>@disc.Discipline</td>
+                                    <td>@disc.Count</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="2" class="text-muted text-center py-3">No schedule data available.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}
 
 @code {
+    private int ActiveTab;
 
-    protected override void OnInitialized()
+    private List<TeacherWorkloadDto> TeacherStats = new();
+    private List<GroupLoadDto> GroupStats = new();
+    private List<ClassroomUtilizationDto> ClassroomStats = new();
+    private List<ScheduleItemInfo> ScheduleItems = new();
+
+    private Dictionary<DayOfWeek, int> DayOfWeekDist = new();
+    private Dictionary<int, int> LessonNumberDist = new();
+    private Dictionary<string, int> WeekTypeDist = new();
+    private List<(string Discipline, int Count)> TopDisciplines = new();
+
+    private string SearchQuery = string.Empty;
+
+    private IEnumerable<TeacherWorkloadDto> FilteredTeachers =>
+        string.IsNullOrWhiteSpace(SearchQuery)
+            ? TeacherStats
+            : TeacherStats.Where(t => t.TeacherName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<GroupLoadDto> FilteredGroups =>
+        string.IsNullOrWhiteSpace(SearchQuery)
+            ? GroupStats
+            : GroupStats.Where(g => g.GroupName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<ClassroomUtilizationDto> FilteredClassrooms =>
+        string.IsNullOrWhiteSpace(SearchQuery)
+            ? ClassroomStats
+            : ClassroomStats.Where(c => c.ClassroomName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
     {
-        if (!Session.IsAuthenticated)
+        if (!Session.IsAuthenticated || !(Session.IsManagement || Session.IsAdmin))
         {
             Navigation.NavigateTo("/");
+            return;
         }
+
+        TeacherStats = await StatisticsService.GetTeacherStatisticsAsync();
+        GroupStats = await StatisticsService.GetGroupStatisticsAsync();
+        ClassroomStats = await StatisticsService.GetClassroomStatisticsAsync();
+        ScheduleItems = await ScheduleService.GetAllScheduleItemsAsync();
+
+        // Calculate Day of Week Distribution (Mon to Sat)
+        DayOfWeekDist = Enum.GetValues<DayOfWeek>()
+            .Where(d => d != DayOfWeek.Sunday)
+            .ToDictionary(d => d, d => ScheduleItems.Count(i => i.DayOfWeek == d));
+
+        // Calculate Lesson Number Distribution (Pairs 1 to 6)
+        LessonNumberDist = Enumerable.Range(1, 6)
+            .ToDictionary(slot => slot, slot => ScheduleItems.Count(i => i.LessonNumber == slot));
+
+        // Calculate Week Type Distribution
+        WeekTypeDist = new Dictionary<string, int>
+        {
+            { "Both", ScheduleItems.Count(i => string.Equals(i.WeekType, "Both", StringComparison.OrdinalIgnoreCase)) },
+            { "Odd", ScheduleItems.Count(i => string.Equals(i.WeekType, "Odd", StringComparison.OrdinalIgnoreCase)) },
+            { "Even", ScheduleItems.Count(i => string.Equals(i.WeekType, "Even", StringComparison.OrdinalIgnoreCase)) }
+        };
+
+        // Calculate Top Disciplines
+        TopDisciplines = ScheduleItems
+            .GroupBy(i => i.DisciplineName)
+            .Select(g => (Discipline: g.Key, Count: g.Count()))
+            .OrderByDescending(x => x.Count)
+            .Take(5)
+            .ToList();
     }
+
+    private string GetWeekTypeName(string type) => type switch
+    {
+        "Both" => "Both Weeks",
+        "Odd" => "Odd Week",
+        "Even" => "Even Week",
+        _ => type
+    };
 }

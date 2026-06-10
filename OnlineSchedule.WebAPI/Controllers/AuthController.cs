@@ -47,29 +47,5 @@ namespace WebAPI.Controllers
                     });
             }
         }
-
-        [HttpPost("register")]
-        public async Task<ActionResult<UserInfo>> Register(
-            [FromBody] RegisterRequest request)
-        {
-            try
-            {
-                var user = await credentialManager.RegisterAccountAsync(
-                    request.Username,
-                    request.Email,
-                    request.Password,
-                    request.Role);
-
-                return Ok(user);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(
-                    new
-                    {
-                        Message = ex.Message
-                    });
-            }
-        }
     }
 }

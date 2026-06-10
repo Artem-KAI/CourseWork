@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 using AutoMapper;
 using CONTRACT.DTO;
 using BLL.Interfaces;
-using BLL.Enums;
 using BLL.Exceptions;
 using DAL.Entities;
 using DAL.Interfaces;
+using BLL.Helpers;
 
 namespace BLL.Services;
 
@@ -51,7 +51,7 @@ public sealed class ScheduleManager : IScheduleManager
             bool hasAccess = false;
             foreach (var role in allowedRoles)
             {
-                if (user.Role == role)
+                if (string.Equals(user.Role, role, StringComparison.OrdinalIgnoreCase))
                 {
                     hasAccess = true;
                     break;
@@ -108,14 +108,14 @@ public sealed class ScheduleManager : IScheduleManager
             throw new EntityNotFoundException("Викладача не знайдено.");
         }
 
-        if (user.Role == "Teacher")
+        if (string.Equals(user.Role, "Teacher", StringComparison.OrdinalIgnoreCase))
         {
             if (teacher.UserId != user.Id)
             {
                 throw new AccessDeniedException("Викладачі можуть переглядати тільки свій власний розклад.");
             }
         }
-        else if (user.Role == "Student")
+        else if (string.Equals(user.Role, "Student", StringComparison.OrdinalIgnoreCase))
         {
             throw new AccessDeniedException("Студенти не можуть переглядати розклад конкретних викладачів.");
         }
@@ -140,7 +140,7 @@ public sealed class ScheduleManager : IScheduleManager
     {
         var user = await GetAndValidateUserAsync(currentUserId);
         
-        if (user.Role == "Teacher" || user.Role == "Student")
+        if (string.Equals(user.Role, "Teacher", StringComparison.OrdinalIgnoreCase) || string.Equals(user.Role, "Student", StringComparison.OrdinalIgnoreCase))
         {
             throw new AccessDeniedException("У вас немає прав для перегляду розкладу аудиторій.");
         }
@@ -171,7 +171,7 @@ public sealed class ScheduleManager : IScheduleManager
     {
         var user = await GetAndValidateUserAsync(currentUserId);
 
-        if (user.Role == "Teacher" || user.Role == "Student")
+        if (string.Equals(user.Role, "Teacher", StringComparison.OrdinalIgnoreCase) || string.Equals(user.Role, "Student", StringComparison.OrdinalIgnoreCase))
         {
             throw new AccessDeniedException("У вас немає прав для перегляду розкладу підрозділів.");
         }
@@ -188,7 +188,8 @@ public sealed class ScheduleManager : IScheduleManager
         foreach (var s in allItems)
         {
             if ((s.Group != null && s.Group.DepartmentId == departmentId) || 
-                (s.Teacher != null && s.Teacher.DepartmentId == departmentId))
+                (s.Teacher != null && s.Teacher.DepartmentId == departmentId) ||
+                (s.Discipline != null && s.Discipline.DepartmentId == departmentId))
             {
                 bool exists = false;
                 foreach (var added in items)
@@ -231,7 +232,7 @@ public sealed class ScheduleManager : IScheduleManager
     public async Task<IReadOnlyCollection<ScheduleItemInfo>>
         GetAllScheduleItemsAsync(int currentUserId)
     {
-        await GetAndValidateUserAsync(currentUserId, new[] { "Admin", "Editor" }, "Тільки Адміністратори та Редактори можуть переглядати редактор розкладу.");
+        await GetAndValidateUserAsync(currentUserId, new[] { "Admin", "Editor", "Management" }, "Тільки Адміністратори та Редактори можуть переглядати редактор розкладу.");
 
         var items = await _store.ScheduleItems.GetAllAsync();
 
@@ -332,7 +333,7 @@ public sealed class ScheduleManager : IScheduleManager
     public async Task<IReadOnlyCollection<GroupInfo>> GetAllGroupsAsync(int currentUserId)
     {
         await GetAndValidateUserAsync(currentUserId);
-        var grps = await _store.Groups.GetAllAsync();
+        var grps = await _store.Groups.GetAllAsync(g => g.Department);
         return _mapper.Map<IReadOnlyCollection<GroupInfo>>(grps);
     }
 
@@ -342,8 +343,8 @@ public sealed class ScheduleManager : IScheduleManager
     public async Task<IReadOnlyCollection<TeacherInfo>> GetAllTeachersAsync(int currentUserId)
     {
         var user = await GetAndValidateUserAsync(currentUserId);
-        var teachers = await _store.Teachers.GetAllAsync();
-        if (user.Role == "Teacher")
+        var teachers = await _store.Teachers.GetAllAsync(t => t.Department);
+        if (string.Equals(user.Role, "Teacher", StringComparison.OrdinalIgnoreCase))
         {
             teachers = teachers
                 .Where(t => t.UserId == user.Id)
@@ -376,14 +377,71 @@ public sealed class ScheduleManager : IScheduleManager
 
     #region Reference CRUD (Admin only)
     /// <summary>
-    /// Створює новий підрозділ. Назва передається енамом для забезпечення уніфікації.
+    /// Створює новий підрозділ.
     /// </summary>
-    public async Task CreateDepartmentAsync(int currentUserId, DepartmentName name)
+    public async Task CreateDepartmentAsync(int currentUserId, string name)
     {
         await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може створювати підрозділи.");
+        
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Назва кафедри не може бути порожньою.");
+        }
 
-        var dep = new Department { Name = name.ToString() };
+        var allDeps = await _store.Departments.GetAllAsync();
+        if (allDeps.Any(d => d.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new ArgumentException("Підрозділ з такою назвою вже існує.");
+        }
+
+        var dep = new Department { Name = name.Trim() };
         await _store.Departments.CreateAsync(dep);
+        await _store.CommitAsync();
+    }
+
+    /// <summary>
+    /// Оновлює підрозділ.
+    /// </summary>
+    public async Task UpdateDepartmentAsync(int currentUserId, int departmentId, string name)
+    {
+        await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може оновлювати підрозділи.");
+        
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Назва кафедри не може бути порожньою.");
+        }
+
+        var dep = await _store.Departments.GetAsync(departmentId);
+        if (dep == null)
+        {
+            throw new EntityNotFoundException("Вказаний підрозділ не знайдено.");
+        }
+
+        var allDeps = await _store.Departments.GetAllAsync();
+        if (allDeps.Any(d => d.Id != departmentId && d.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new ArgumentException("Підрозділ з такою назвою вже існує.");
+        }
+
+        dep.Name = name.Trim();
+        _store.Departments.Update(dep);
+        await _store.CommitAsync();
+    }
+
+    /// <summary>
+    /// Видаляє підрозділ.
+    /// </summary>
+    public async Task DeleteDepartmentAsync(int currentUserId, int departmentId)
+    {
+        await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може видаляти підрозділи.");
+        
+        var dep = await _store.Departments.GetAsync(departmentId);
+        if (dep == null)
+        {
+            throw new EntityNotFoundException("Вказаний підрозділ не знайдено.");
+        }
+
+        await _store.Departments.DeleteAsync(departmentId);
         await _store.CommitAsync();
     }
 
@@ -399,7 +457,6 @@ public sealed class ScheduleManager : IScheduleManager
             throw new ArgumentException("Назва групи обов'язкова.");
         }
 
-        // Перевірка формату назви групи за допомогою Regex (наприклад: ПІ-221)
         if (!GroupNameRegex.IsMatch(name))
         {
             throw new ArgumentException("Назва групи має відповідати формату 'XX-000' (наприклад, 'ПІ-221' чи 'КН-11').");
@@ -411,15 +468,79 @@ public sealed class ScheduleManager : IScheduleManager
             throw new EntityNotFoundException("Вказаний підрозділ не знайдено.");
         }
 
-        var grp = new Group { Name = name, DepartmentId = departmentId };
+        var allGroups = await _store.Groups.GetAllAsync();
+        if (allGroups.Any(g => g.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new ArgumentException("Група з такою назвою вже існує.");
+        }
+
+        var grp = new Group { Name = name.Trim(), DepartmentId = departmentId };
         await _store.Groups.CreateAsync(grp);
         await _store.CommitAsync();
     }
 
     /// <summary>
-    /// Додає викладача в систему. Науковий ступінь обирається строго з енаму.
+    /// Оновлює академічну групу.
     /// </summary>
-    public async Task CreateTeacherAsync(int currentUserId, string name, TeacherDegree degree, int departmentId, int? userId)
+    public async Task UpdateGroupAsync(int currentUserId, int groupId, string name, int departmentId)
+    {
+        await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може оновлювати групи.");
+        
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Назва групи обов'язкова.");
+        }
+
+        if (!GroupNameRegex.IsMatch(name))
+        {
+            throw new ArgumentException("Назва групи має відповідати формату 'XX-000' (наприклад, 'ПІ-221' чи 'КН-11').");
+        }
+
+        var grp = await _store.Groups.GetAsync(groupId);
+        if (grp == null)
+        {
+            throw new EntityNotFoundException("Вказану групу не знайдено.");
+        }
+        
+        var dep = await _store.Departments.GetAsync(departmentId);
+        if (dep == null)
+        {
+            throw new EntityNotFoundException("Вказаний підрозділ не знайдено.");
+        }
+
+        var allGroups = await _store.Groups.GetAllAsync();
+        if (allGroups.Any(g => g.Id != groupId && g.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new ArgumentException("Група з такою назвою вже існує.");
+        }
+
+        grp.Name = name.Trim();
+        grp.DepartmentId = departmentId;
+        _store.Groups.Update(grp);
+        await _store.CommitAsync();
+    }
+
+    /// <summary>
+    /// Видаляє академічну групу.
+    /// </summary>
+    public async Task DeleteGroupAsync(int currentUserId, int groupId)
+    {
+        await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може видаляти групи.");
+        
+        var grp = await _store.Groups.GetAsync(groupId);
+        if (grp == null)
+        {
+            throw new EntityNotFoundException("Вказану групу не знайдено.");
+        }
+
+        await _store.Groups.DeleteAsync(groupId);
+        await _store.CommitAsync();
+    }
+
+    /// <summary>
+    /// Додає викладача в систему.
+    /// </summary>
+    public async Task CreateTeacherAsync(int currentUserId, string name, string degree, int departmentId, int? userId)
     {
         await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може додавати викладачів.");
         if (string.IsNullOrWhiteSpace(name))
@@ -442,10 +563,18 @@ public sealed class ScheduleManager : IScheduleManager
             }
         }
 
+        var allTeachers = await _store.Teachers.GetAllAsync();
+        if (allTeachers.Any(t => t.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase) && t.DepartmentId == departmentId))
+        {
+            throw new ArgumentException("Викладач з таким ПІБ на цій кафедрі вже існує.");
+        }
+
+        string normalizedDegree = TeacherDegreeHelper.ValidateAndNormalizeDegree(degree);
+
         var t = new Teacher 
         { 
-            Name = name, 
-            Degree = degree.ToString(), 
+            Name = name.Trim(), 
+            Degree = normalizedDegree, 
             DepartmentId = departmentId, 
             UserId = userId 
         };
@@ -454,16 +583,86 @@ public sealed class ScheduleManager : IScheduleManager
     }
 
     /// <summary>
-    /// Додає аудиторію із суворою перевіркою належності готової назви аудиторії до вказаного корпусу.
+    /// Оновлює запис про викладача.
     /// </summary>
-    public async Task CreateClassroomAsync(int currentUserId, ClassroomName name, ClassroomBuilding building, int capacity)
+    public async Task UpdateTeacherAsync(int currentUserId, int teacherId, string name, string degree, int departmentId, int? userId)
+    {
+        await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може оновлювати викладачів.");
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("ПІБ викладача обов'язкове.");
+        }
+
+        var teacher = await _store.Teachers.GetAsync(teacherId);
+        if (teacher == null)
+        {
+            throw new EntityNotFoundException("Вказаного викладача не знайдено.");
+        }
+
+        var dep = await _store.Departments.GetAsync(departmentId);
+        if (dep == null)
+        {
+            throw new EntityNotFoundException("Вказаний підрозділ не знайдено.");
+        }
+
+        if (userId.HasValue)
+        {
+            var u = await _store.Users.GetAsync(userId.Value);
+            if (u == null)
+            {
+                throw new EntityNotFoundException("Вказаного користувача не знайдено.");
+            }
+        }
+
+        var allTeachers = await _store.Teachers.GetAllAsync();
+        if (allTeachers.Any(t => t.Id != teacherId && t.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase) && t.DepartmentId == departmentId))
+        {
+            throw new ArgumentException("Викладач з таким ПІБ на цій кафедрі вже існує.");
+        }
+
+        string normalizedDegree = TeacherDegreeHelper.ValidateAndNormalizeDegree(degree);
+
+        teacher.Name = name.Trim();
+        teacher.Degree = normalizedDegree;
+        teacher.DepartmentId = departmentId;
+        teacher.UserId = userId;
+
+        _store.Teachers.Update(teacher);
+        await _store.CommitAsync();
+    }
+
+    /// <summary>
+    /// Видаляє запис про викладача.
+    /// </summary>
+    public async Task DeleteTeacherAsync(int currentUserId, int teacherId)
+    {
+        await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може видаляти викладачів.");
+        
+        var teacher = await _store.Teachers.GetAsync(teacherId);
+        if (teacher == null)
+        {
+            throw new EntityNotFoundException("Вказаного викладача не знайдено.");
+        }
+
+        await _store.Teachers.DeleteAsync(teacherId);
+        await _store.CommitAsync();
+    }
+
+    /// <summary>
+    /// Додає аудиторію.
+    /// </summary>
+    public async Task CreateClassroomAsync(int currentUserId, string name, string building, int capacity)
     {
         await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може створювати аудиторії.");
         
-        // Сувора бізнес-валідація сумісності назви кімнати з корпусом
-        if (!building.IsValidRoomForBuilding(name))
+        if (string.IsNullOrWhiteSpace(name))
         {
-            throw new ArgumentException($"Аудиторія '{name}' не належить навчальному корпусу '{building}'. Будь ласка, оберіть коректну пару корпус/кімната.");
+            throw new ArgumentException("Назва аудиторії обов'язкова.");
+        }
+
+        if (string.IsNullOrWhiteSpace(building))
+        {
+            throw new ArgumentException("Назва корпусу обов'язкова.");
         }
 
         if (capacity <= 0)
@@ -471,10 +670,16 @@ public sealed class ScheduleManager : IScheduleManager
             throw new ArgumentException("Місткість повинна бути більше 0.");
         }
 
+        var allRooms = await _store.Classrooms.GetAllAsync();
+        if (allRooms.Any(c => c.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase) && c.Building.Equals(building.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new ArgumentException("Така аудиторія в цьому корпусі вже існує.");
+        }
+
         var c = new Classroom 
         { 
-            Name = name.ToString(), 
-            Building = building.ToString(), 
+            Name = name.Trim(), 
+            Building = building.Trim(), 
             Capacity = capacity 
         };
         await _store.Classrooms.CreateAsync(c);
@@ -482,9 +687,68 @@ public sealed class ScheduleManager : IScheduleManager
     }
 
     /// <summary>
+    /// Оновлює аудиторію.
+    /// </summary>
+    public async Task UpdateClassroomAsync(int currentUserId, int classroomId, string name, string building, int capacity)
+    {
+        await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може оновлювати аудиторії.");
+        
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Назва аудиторії обов'язкова.");
+        }
+
+        if (string.IsNullOrWhiteSpace(building))
+        {
+            throw new ArgumentException("Назва корпусу обов'язкова.");
+        }
+
+        if (capacity <= 0)
+        {
+            throw new ArgumentException("Місткість повинна бути більше 0.");
+        }
+
+        var room = await _store.Classrooms.GetAsync(classroomId);
+        if (room == null)
+        {
+            throw new EntityNotFoundException("Вказану аудиторію не знайдено.");
+        }
+
+        var allRooms = await _store.Classrooms.GetAllAsync();
+        if (allRooms.Any(c => c.Id != classroomId && c.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase) && c.Building.Equals(building.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new ArgumentException("Така аудиторія в цьому корпусі вже існує.");
+        }
+
+        room.Name = name.Trim();
+        room.Building = building.Trim();
+        room.Capacity = capacity;
+
+        _store.Classrooms.Update(room);
+        await _store.CommitAsync();
+    }
+
+    /// <summary>
+    /// Видаляє аудиторію.
+    /// </summary>
+    public async Task DeleteClassroomAsync(int currentUserId, int classroomId)
+    {
+        await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може видаляти аудиторії.");
+        
+        var room = await _store.Classrooms.GetAsync(classroomId);
+        if (room == null)
+        {
+            throw new EntityNotFoundException("Вказану аудиторію не знайдено.");
+        }
+
+        await _store.Classrooms.DeleteAsync(classroomId);
+        await _store.CommitAsync();
+    }
+
+    /// <summary>
     /// Додає нову навчальну дисципліну в довідник.
     /// </summary>
-    public async Task CreateDisciplineAsync(int currentUserId, string name)
+    public async Task CreateDisciplineAsync(int currentUserId, string name, int departmentId)
     {
         await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може додавати дисципліни.");
         if (string.IsNullOrWhiteSpace(name))
@@ -492,8 +756,72 @@ public sealed class ScheduleManager : IScheduleManager
             throw new ArgumentException("Назва дисципліни обов'язкова.");
         }
 
-        var d = new Discipline { Name = name };
+        var dep = await _store.Departments.GetAsync(departmentId);
+        if (dep == null)
+        {
+            throw new EntityNotFoundException("Вказаний підрозділ не знайдено.");
+        }
+
+        var allDisc = await _store.Disciplines.GetAllAsync();
+        if (allDisc.Any(d => d.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase) && d.DepartmentId == departmentId))
+        {
+            throw new ArgumentException("Така дисципліна на цій кафедрі вже існує.");
+        }
+
+        var d = new Discipline { Name = name.Trim(), DepartmentId = departmentId };
         await _store.Disciplines.CreateAsync(d);
+        await _store.CommitAsync();
+    }
+
+    /// <summary>
+    /// Оновлює навчальну дисципліну.
+    /// </summary>
+    public async Task UpdateDisciplineAsync(int currentUserId, int disciplineId, string name, int departmentId)
+    {
+        await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може оновлювати дисципліни.");
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Назва дисципліни обов'язкова.");
+        }
+
+        var disc = await _store.Disciplines.GetAsync(disciplineId);
+        if (disc == null)
+        {
+            throw new EntityNotFoundException("Вказану дисципліну не знайдено.");
+        }
+
+        var dep = await _store.Departments.GetAsync(departmentId);
+        if (dep == null)
+        {
+            throw new EntityNotFoundException("Вказаний підрозділ не знайдено.");
+        }
+
+        var allDisc = await _store.Disciplines.GetAllAsync();
+        if (allDisc.Any(d => d.Id != disciplineId && d.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase) && d.DepartmentId == departmentId))
+        {
+            throw new ArgumentException("Така дисципліна на цій кафедрі вже існує.");
+        }
+
+        disc.Name = name.Trim();
+        disc.DepartmentId = departmentId;
+        _store.Disciplines.Update(disc);
+        await _store.CommitAsync();
+    }
+
+    /// <summary>
+    /// Видаляє навчальну дисципліну.
+    /// </summary>
+    public async Task DeleteDisciplineAsync(int currentUserId, int disciplineId)
+    {
+        await GetAndValidateUserAsync(currentUserId, new[] { "Admin" }, "Лише Адміністратор може видаляти дисципліни.");
+        
+        var disc = await _store.Disciplines.GetAsync(disciplineId);
+        if (disc == null)
+        {
+            throw new EntityNotFoundException("Вказану дисципліну не знайдено.");
+        }
+
+        await _store.Disciplines.DeleteAsync(disciplineId);
         await _store.CommitAsync();
     }
     #endregion

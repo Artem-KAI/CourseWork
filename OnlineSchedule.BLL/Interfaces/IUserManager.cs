@@ -9,6 +9,8 @@ namespace BLL.Interfaces;
 /// </summary>
 public interface IUserManager
 {
+    Task<UserInfo> CreateUserAsync(string username, string email, string password, string role);
+
     /// <summary>
     /// Отримує всіх користувачів системи.
     /// </summary>

@@ -33,7 +33,7 @@ builder.Services.AddDbContext<ScheduleContext>(options =>
 {
     options.UseSqlite(
         builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? "Data Source=Schedule.db");
+        ?? "Data Source=OnlineSchedule.db");
 });
 
 var app = builder.Build();

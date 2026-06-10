@@ -1,4 +1,4 @@
-﻿using CONTRACT.DTO;
+using CONTRACT.DTO;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -171,6 +171,20 @@ namespace UI.Services
             return response.IsSuccessStatusCode;
         }
 
+        public async Task<bool> UpdateDepartmentAsync(int id, UpdateDepartmentRequest request)
+        {
+            var client = CreateClient();
+            var response = await client.PutAsJsonAsync($"api/schedule/departments/{id}", request);
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> DeleteDepartmentAsync(int id)
+        {
+            var client = CreateClient();
+            var response = await client.DeleteAsync($"api/schedule/departments/{id}");
+            return response.IsSuccessStatusCode;
+        }
+
         public async Task<bool> AddGroupAsync(CreateGroupRequest request)
         {
             var client = CreateClient();
@@ -179,6 +193,20 @@ namespace UI.Services
                 "api/schedule/groups",
                 request);
 
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> UpdateGroupAsync(int id, UpdateGroupRequest request)
+        {
+            var client = CreateClient();
+            var response = await client.PutAsJsonAsync($"api/schedule/groups/{id}", request);
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> DeleteGroupAsync(int id)
+        {
+            var client = CreateClient();
+            var response = await client.DeleteAsync($"api/schedule/groups/{id}");
             return response.IsSuccessStatusCode;
         }
 
@@ -193,6 +221,20 @@ namespace UI.Services
             return response.IsSuccessStatusCode;
         }
 
+        public async Task<bool> UpdateTeacherAsync(int id, UpdateTeacherRequest request)
+        {
+            var client = CreateClient();
+            var response = await client.PutAsJsonAsync($"api/schedule/teachers/{id}", request);
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> DeleteTeacherAsync(int id)
+        {
+            var client = CreateClient();
+            var response = await client.DeleteAsync($"api/schedule/teachers/{id}");
+            return response.IsSuccessStatusCode;
+        }
+
         public async Task<bool> AddClassroomAsync(CreateClassroomRequest request)
         {
             var client = CreateClient();
@@ -204,6 +246,20 @@ namespace UI.Services
             return response.IsSuccessStatusCode;
         }
 
+        public async Task<bool> UpdateClassroomAsync(int id, UpdateClassroomRequest request)
+        {
+            var client = CreateClient();
+            var response = await client.PutAsJsonAsync($"api/schedule/classrooms/{id}", request);
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> DeleteClassroomAsync(int id)
+        {
+            var client = CreateClient();
+            var response = await client.DeleteAsync($"api/schedule/classrooms/{id}");
+            return response.IsSuccessStatusCode;
+        }
+
         public async Task<bool> AddDisciplineAsync(CreateDisciplineRequest request)
         {
             var client = CreateClient();
@@ -212,6 +268,20 @@ namespace UI.Services
                 "api/schedule/disciplines",
                 request);
 
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> UpdateDisciplineAsync(int id, UpdateDisciplineRequest request)
+        {
+            var client = CreateClient();
+            var response = await client.PutAsJsonAsync($"api/schedule/disciplines/{id}", request);
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> DeleteDisciplineAsync(int id)
+        {
+            var client = CreateClient();
+            var response = await client.DeleteAsync($"api/schedule/disciplines/{id}");
             return response.IsSuccessStatusCode;
         }
     }

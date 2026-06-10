@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CONTRACT.DTO;
-using BLL.Enums;
 
 namespace BLL.Interfaces;
 
@@ -94,9 +93,19 @@ public interface IScheduleManager
     // ==========================================
 
     /// <summary>
-    /// Створює новий підрозділ. Назва підрозділу має бути обрана з енаму.
+    /// Створює новий підрозділ.
     /// </summary>
-    Task CreateDepartmentAsync(int currentUserId, DepartmentName name);
+    Task CreateDepartmentAsync(int currentUserId, string name);
+
+    /// <summary>
+    /// Оновлює підрозділ.
+    /// </summary>
+    Task UpdateDepartmentAsync(int currentUserId, int departmentId, string name);
+
+    /// <summary>
+    /// Видаляє підрозділ.
+    /// </summary>
+    Task DeleteDepartmentAsync(int currentUserId, int departmentId);
 
     /// <summary>
     /// Створює нову академічну групу із перевіркою формату назви через Regex.
@@ -104,17 +113,57 @@ public interface IScheduleManager
     Task CreateGroupAsync(int currentUserId, string name, int departmentId);
 
     /// <summary>
-    /// Створює запис про викладача із вказанням вченого ступеня з енаму.
+    /// Оновлює академічну групу.
     /// </summary>
-    Task CreateTeacherAsync(int currentUserId, string name, TeacherDegree degree, int departmentId, int? userId);
+    Task UpdateGroupAsync(int currentUserId, int groupId, string name, int departmentId);
 
     /// <summary>
-    /// Додає навчальну аудиторію із суворою відповідністю її назви обраному корпусу.
+    /// Видаляє академічну групу.
     /// </summary>
-    Task CreateClassroomAsync(int currentUserId, ClassroomName name, ClassroomBuilding building, int capacity);
+    Task DeleteGroupAsync(int currentUserId, int groupId);
+
+    /// <summary>
+    /// Створює запис про викладача із вказанням вченого ступеня.
+    /// </summary>
+    Task CreateTeacherAsync(int currentUserId, string name, string degree, int departmentId, int? userId);
+
+    /// <summary>
+    /// Оновлює запис про викладача.
+    /// </summary>
+    Task UpdateTeacherAsync(int currentUserId, int teacherId, string name, string degree, int departmentId, int? userId);
+
+    /// <summary>
+    /// Видаляє запис про викладача.
+    /// </summary>
+    Task DeleteTeacherAsync(int currentUserId, int teacherId);
+
+    /// <summary>
+    /// Додає навчальну аудиторію.
+    /// </summary>
+    Task CreateClassroomAsync(int currentUserId, string name, string building, int capacity);
+
+    /// <summary>
+    /// Оновлює навчальну аудиторію.
+    /// </summary>
+    Task UpdateClassroomAsync(int currentUserId, int classroomId, string name, string building, int capacity);
+
+    /// <summary>
+    /// Видаляє навчальну аудиторію.
+    /// </summary>
+    Task DeleteClassroomAsync(int currentUserId, int classroomId);
 
     /// <summary>
     /// Додає нову навчальну дисципліну в довідник.
     /// </summary>
-    Task CreateDisciplineAsync(int currentUserId, string name);
+    Task CreateDisciplineAsync(int currentUserId, string name, int departmentId);
+
+    /// <summary>
+    /// Оновлює навчальну дисципліну в довіднику.
+    /// </summary>
+    Task UpdateDisciplineAsync(int currentUserId, int disciplineId, string name, int departmentId);
+
+    /// <summary>
+    /// Видаляє навчальну дисципліну з довідника.
+    /// </summary>
+    Task DeleteDisciplineAsync(int currentUserId, int disciplineId);
 }

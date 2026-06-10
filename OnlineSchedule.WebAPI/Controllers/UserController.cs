@@ -1,4 +1,4 @@
-﻿using CONTRACT.DTO;
+using CONTRACT.DTO;
 
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,7 +28,22 @@ namespace WebAPI.Controllers
             var users = await userManager.GetAllUsersAsync();
             var user = users.FirstOrDefault(x => x.Id == userId);
 
-            return user?.Role == "Admin";
+            return string.Equals(user?.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<UserInfo>> Create(CreateUserRequest request)
+        {
+            if (!await IsAdmin())
+                return Forbid();
+
+            var user = await userManager.CreateUserAsync(
+                request.Username,
+                request.Email,
+                request.Password,
+                request.Role);
+
+            return Ok(user);
         }
 
         [HttpGet]

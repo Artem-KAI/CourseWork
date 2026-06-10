@@ -1,4 +1,4 @@
-﻿@page "/schedule"
+@page "/schedule"
 @rendermode @(new InteractiveServerRenderMode())
 
 @using CONTRACT.DTO
@@ -35,15 +35,6 @@ else
             Role:
             @Session.CurrentUser?.Role
         </h6>
-
-    </div>
-
-    <div class="mb-3">
-
-        <button class="btn btn-secondary"
-                @onclick="Logout">
-            Logout
-        </button>
 
     </div>
 
@@ -304,9 +295,11 @@ else
 
             if (Session.IsTeacher && Teachers.Any())
             {
-                CurrentTeacher = Teachers.First();
+                CurrentTeacher = Teachers.FirstOrDefault(
+                    t => t.UserId == Session.CurrentUser?.Id);
 
-                SelectedTeacherId = CurrentTeacher.Id;
+                if (CurrentTeacher != null)
+                    SelectedTeacherId = CurrentTeacher.Id;
             }
         }
         if (CanUseClassroomFilter)

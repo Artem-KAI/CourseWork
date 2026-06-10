@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using AutoMapper;
-using CONTRACT.DTO;
-using BLL.Interfaces;
 using BLL.Exceptions;
 using BLL.Helpers;
+using BLL.Interfaces;
+using CONTRACT.DTO;
+using DAL.Entities;
 using DAL.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace BLL.Services;
 
@@ -88,6 +91,53 @@ public sealed class UserManager : IUserManager
         await _store.CommitAsync();
     }
 
+    public async Task<UserInfo> CreateUserAsync(string username, string email, string password, string role)
+    {
+        if (string.IsNullOrWhiteSpace(username) ||
+            string.IsNullOrWhiteSpace(email) ||
+            string.IsNullOrWhiteSpace(password))
+        {
+            throw new ArgumentException(
+                "All fields are required.");
+        }
+
+        var allUsers = await _store.Users.GetAllAsync();
+
+        if (allUsers.Any(u =>
+                u.Username.Equals(
+                    username,
+                    StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new ArgumentException(
+                "User with this username already exists.");
+        }
+
+        if (allUsers.Any(u =>
+                u.Email.Equals(
+                    email,
+                    StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new ArgumentException(
+                "User with this email already exists.");
+        }
+
+        string normalizedRole =
+            UserRoleHelper.ValidateAndNormalizeRole(role);
+
+        var user = new User
+        {
+            Username = username,
+            Email = email,
+            PasswordHash = HashPassword(password),
+            Role = normalizedRole
+        };
+
+        await _store.Users.CreateAsync(user);
+        await _store.CommitAsync();
+
+        return _mapper.Map<UserInfo>(user);
+    }
+
     /// <summary>
     /// Видаляє користувача за його ідентифікатором.
     /// </summary>
@@ -102,5 +152,21 @@ public sealed class UserManager : IUserManager
         }
         await _store.Users.DeleteAsync(userId);
         await _store.CommitAsync();
+    }
+
+    private string HashPassword(string password)
+    {
+        var bytes =
+            SHA256.HashData(
+                Encoding.UTF8.GetBytes(password));
+
+        var sb = new StringBuilder();
+
+        foreach (var b in bytes)
+        {
+            sb.Append(b.ToString("x2"));
+        }
+
+        return sb.ToString();
     }
 }
