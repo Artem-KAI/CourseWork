@@ -232,7 +232,7 @@ public sealed class ScheduleManager : IScheduleManager
     public async Task<IReadOnlyCollection<ScheduleItemInfo>>
         GetAllScheduleItemsAsync(int currentUserId)
     {
-        await GetAndValidateUserAsync(currentUserId, new[] { "Admin", "Editor" }, "Тільки Адміністратори та Редактори можуть переглядати редактор розкладу.");
+        await GetAndValidateUserAsync(currentUserId, new[] { "Admin", "Editor", "Management" }, "Тільки Адміністратори та Редактори можуть переглядати редактор розкладу.");
 
         var items = await _store.ScheduleItems.GetAllAsync();
 

@@ -317,41 +317,93 @@ else
 
     private async Task CreateUser()
     {
-        await UserService.CreateUserAsync(NewUser);
+        if (string.IsNullOrWhiteSpace(NewUser.Username) ||
+        string.IsNullOrWhiteSpace(NewUser.Email) ||
+        string.IsNullOrWhiteSpace(NewUser.Password))
+        {
+            Message = "Please fill in all fields.";
+            return;
+        }
 
-        NewUser = new();
+        try
+        {
+            await UserService.CreateUserAsync(NewUser);
 
-        await LoadUsers();
+            NewUser = new();
+
+            Message = "User created successfully.";
+
+            await LoadUsers();
+        }
+        catch (Exception ex)
+        {
+            Message = ex.Message;
+        }
     }
 
     private async Task CreateTeacherAccount()
     {
-        var teacher =
-            Teachers.FirstOrDefault(
-                x => x.Id == SelectedTeacherId);
-
-        if (teacher == null)
+        if (SelectedTeacherId == 0)
+        {
+            Message = "Please select a teacher.";
             return;
+        }
 
-        var request = new RegisterRequest
+        if (string.IsNullOrWhiteSpace(TeacherEmail) ||
+            string.IsNullOrWhiteSpace(TeacherPassword))
         {
-            Username = teacher.Name,
-            Email = TeacherEmail,
-            Password = TeacherPassword,
-            Role = "Teacher"
-        };
+            Message = "Please fill in all fields.";
+            return;
+        }
 
-        var createdUser = await UserService.CreateUserAsync(request);
-
-        await ScheduleService.UpdateTeacherAsync(teacher.Id, new UpdateTeacherRequest
+        try
         {
-            Name = teacher.Name,
-            Degree = teacher.Degree,
-            DepartmentId = teacher.DepartmentId,
-            UserId = createdUser.Id
-        });
+            var teacher =
+                Teachers.FirstOrDefault(
+                    x => x.Id == SelectedTeacherId);
 
-        await LoadUsers();
+            if (teacher == null)
+            {
+                Message = "Please select a teacher.";
+                return;
+            }
+
+            var request = new RegisterRequest
+                {
+                    Username = teacher.Name,
+                    Email = TeacherEmail,
+                    Password = TeacherPassword,
+                    Role = "Teacher"
+                };
+
+            TeacherEmail = "";
+            TeacherPassword = "";
+            SelectedTeacherId = 0;
+
+            var createdUser = await UserService.CreateUserAsync(request);
+
+            if (createdUser == null)
+            {
+                Message = "Teacher username or email is already exitsts.";
+                return;
+            }
+
+            await ScheduleService.UpdateTeacherAsync(teacher.Id, new UpdateTeacherRequest
+                {
+                    Name = teacher.Name,
+                    Degree = teacher.Degree,
+                    DepartmentId = teacher.DepartmentId,
+                    UserId = createdUser.Id
+                });
+
+            Message = "Teacher account created successfully.";
+
+            await LoadUsers();
+        }
+        catch (Exception ex)
+        {
+            Message = ex.Message;
+        }
     }
 
     private void StartEdit(UserInfo user)
