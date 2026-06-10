@@ -91,7 +91,7 @@ public sealed class UserManager : IUserManager
         await _store.CommitAsync();
     }
 
-    public async Task CreateUserAsync(string username, string email, string password, string role)
+    public async Task<UserInfo> CreateUserAsync(string username, string email, string password, string role)
     {
         if (string.IsNullOrWhiteSpace(username) ||
             string.IsNullOrWhiteSpace(email) ||
@@ -133,8 +133,9 @@ public sealed class UserManager : IUserManager
         };
 
         await _store.Users.CreateAsync(user);
-
         await _store.CommitAsync();
+
+        return _mapper.Map<UserInfo>(user);
     }
 
     /// <summary>

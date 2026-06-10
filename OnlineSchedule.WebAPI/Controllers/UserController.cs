@@ -32,18 +32,18 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Create(CreateUserRequest request)
+        public async Task<ActionResult<UserInfo>> Create(CreateUserRequest request)
         {
             if (!await IsAdmin())
                 return Forbid();
 
-            await userManager.CreateUserAsync(
+            var user = await userManager.CreateUserAsync(
                 request.Username,
                 request.Email,
                 request.Password,
                 request.Role);
 
-            return Ok();
+            return Ok(user);
         }
 
         [HttpGet]

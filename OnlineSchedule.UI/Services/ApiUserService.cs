@@ -31,13 +31,20 @@ namespace UI.Services
             return client;
         }
 
-        public async Task CreateUserAsync(RegisterRequest request)
+        public async Task<UserInfo?> CreateUserAsync(RegisterRequest request)
         {
             var client = CreateClient();
 
-            await client.PostAsJsonAsync(
-                "api/users",
-                request);
+            var response =
+                await client.PostAsJsonAsync(
+                    "api/users",
+                    request);
+
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            return await response.Content
+                .ReadFromJsonAsync<UserInfo>();
         }
 
         public async Task<List<UserInfo>> GetUsersAsync()

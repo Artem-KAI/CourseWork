@@ -341,7 +341,15 @@ else
             Role = "Teacher"
         };
 
-        await UserService.CreateUserAsync(request);
+        var createdUser = await UserService.CreateUserAsync(request);
+
+        await ScheduleService.UpdateTeacherAsync(teacher.Id, new UpdateTeacherRequest
+        {
+            Name = teacher.Name,
+            Degree = teacher.Degree,
+            DepartmentId = teacher.DepartmentId,
+            UserId = createdUser.Id
+        });
 
         await LoadUsers();
     }
