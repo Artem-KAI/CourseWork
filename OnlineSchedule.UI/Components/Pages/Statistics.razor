@@ -1,15 +1,131 @@
 ﻿@page "/statistics"
 
+@using CONTRACT.DTO
+
 @inject UserSessionService Session
 @inject NavigationManager Navigation
+@inject ApiStatisticsService StatisticsService
+
+<div class="mb-3">
+
+    <button class="btn btn-primary me-2"
+            @onclick="() => ActiveTab = 0">
+        Teachers
+    </button>
+
+    <button class="btn btn-primary me-2"
+            @onclick="() => ActiveTab = 1">
+        Groups
+    </button>
+
+    <button class="btn btn-primary"
+            @onclick="() => ActiveTab = 2">
+        Classrooms
+    </button>
+
+    @if (ActiveTab == 0)
+    {
+        <table class="table table-striped">
+
+            <thead>
+                <tr>
+                    <th>Teacher</th>
+                    <th>Lessons</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @foreach (var item in TeacherStats)
+                {
+                    <tr>
+                        <td>@item.TeacherName</td>
+                        <td>@item.TotalLessons</td>
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+    }
+
+    @if (ActiveTab == 1)
+    {
+        <table class="table table-striped">
+
+            <thead>
+                <tr>
+                    <th>Group</th>
+                    <th>Total Lessons</th>
+                    <th>Average Per Day</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @foreach (var item in GroupStats)
+                {
+                    <tr>
+                        <td>@item.GroupName</td>
+                        <td>@item.TotalLessons</td>
+                        <td>@item.AverageLessonsPerDay.ToString("F2")</td>
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+    }
+
+    @if (ActiveTab == 2)
+    {
+        <table class="table table-striped">
+
+            <thead>
+                <tr>
+                    <th>Classroom</th>
+                    <th>Occupied Slots</th>
+                    <th>Utilization %</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @foreach (var item in ClassroomStats)
+                {
+                    <tr>
+                        <td>@item.ClassroomName</td>
+                        <td>@item.OccupiedSlotsCount</td>
+                        <td>@item.UtilizationPercentage.ToString("F2")%</td>
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+    }
+
+</div>
 
 @code {
+    private int ActiveTab;
 
-    protected override void OnInitialized()
+    private List<TeacherWorkloadDto> TeacherStats = new();
+    private List<GroupLoadDto> GroupStats = new();
+    private List<ClassroomUtilizationDto> ClassroomStats = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        if (!Session.IsAuthenticated)
+        if (!Session.IsAuthenticated || !(Session.IsManagement ||Session.IsAdmin))
         {
             Navigation.NavigateTo("/");
+            return;
         }
+
+        TeacherStats = await StatisticsService.GetTeacherStatisticsAsync();
+
+        GroupStats = await StatisticsService.GetGroupStatisticsAsync();
+
+        ClassroomStats = await StatisticsService.GetClassroomStatisticsAsync();
     }
 }
