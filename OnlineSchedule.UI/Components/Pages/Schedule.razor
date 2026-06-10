@@ -79,20 +79,14 @@ else
     }
     @if (Session.IsTeacher)
     {
-        <div class="mb-3">
-
-            <label>Teacher</label>
-
-            <input class="form-control"
-                   value="@CurrentTeacher?.Name"
-                   readonly />
-
-            <button class="btn btn-primary mt-2"
-                    @onclick="LoadTeacherSchedule">
-                Load my schedule
-            </button>
-
-        </div>
+        @foreach (var teacher in Teachers)
+        {
+            <div>
+                @teacher.Name |
+                TeacherId=@teacher.Id |
+                UserId=@teacher.UserId
+            </div>
+        }
     }
     else if (CanUseTeacherFilter)
     {
@@ -295,9 +289,13 @@ else
 
             if (Session.IsTeacher && Teachers.Any())
             {
-                CurrentTeacher = Teachers.First();
+                CurrentTeacher = Teachers.FirstOrDefault(
+                    t => t.Name.Equals(
+                        Session.CurrentUser?.Username,
+                        StringComparison.OrdinalIgnoreCase));
 
-                SelectedTeacherId = CurrentTeacher.Id;
+                if (CurrentTeacher != null)
+                    SelectedTeacherId = CurrentTeacher.Id;
             }
         }
         if (CanUseClassroomFilter)
