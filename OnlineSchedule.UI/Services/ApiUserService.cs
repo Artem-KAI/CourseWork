@@ -45,7 +45,7 @@ namespace UI.Services
             var client = CreateClient();
 
             return await client.GetFromJsonAsync<List<UserInfo>>
-                ("api/user") ?? new();
+                ("api/users") ?? new();
         }
 
         public async Task<UserInfo?> GetUserAsync(int id)
@@ -53,23 +53,23 @@ namespace UI.Services
             var client = CreateClient();
 
             return await client.GetFromJsonAsync<UserInfo>
-                ($"api/user/{id}");
+                ($"api/users/{id}");
         }
 
-        public async Task UpdateUserAsync(int id, UserInfo user)
+        public async Task UpdateUserAsync(int id, UpdateUserRequests request)
         {
             var client = CreateClient();
 
             await client.PutAsJsonAsync(
                 $"api/users/{id}",
-                user);
+                request);
         }
 
         public async Task DeleteUserAsync(int id)
         {
             var client = CreateClient();
 
-            await client.DeleteAsync($"api/user/{id}");
+            await client.DeleteAsync($"api/users/{id}");
         }
     }
 }

@@ -1,78 +1,381 @@
 ﻿@page "/users"
+@rendermode @(new InteractiveServerRenderMode())
 
 @using CONTRACT.DTO
+@using global::UI.Models
 
+@inject ApiUserService UserService
+@inject ApiScheduleService ScheduleService
 @inject UserSessionService Session
 @inject NavigationManager Navigation
-@inject ApiUserService UserService
 
-<table class="table table-striped">
+<PageTitle>Users</PageTitle>
 
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
+@if (!Session.IsAuthenticated || !Session.IsAdmin)
+{
+    <div class="alert alert-danger">
+        Access denied.
+    </div>
+}
+else
+{
+    <h4>Create User</h4>
 
-    <tbody>
+    <div class="row">
 
-        @foreach (var user in FilteredUsers)
-        {
+        <div class="col-md-3">
+            <label>Username</label>
+
+            <input class="form-control"
+                   @bind="NewUser.Username" />
+        </div>
+
+        <div class="col-md-3">
+            <label>Email</label>
+
+            <input class="form-control"
+                   @bind="NewUser.Email" />
+        </div>
+
+        <div class="col-md-3">
+            <label>Password</label>
+
+            <input type="password"
+                   class="form-control"
+                   @bind="NewUser.Password" />
+        </div>
+
+        <div class="col-md-3">
+            <label>Role</label>
+
+            <select class="form-select"
+                    @bind="NewUser.Role">
+
+                <option>Student</option>
+                <option>Teacher</option>
+                <option>Editor</option>
+                <option>Management</option>
+                <option>Admin</option>
+
+            </select>
+        </div>
+
+    </div>
+
+    <button class="btn btn-success mt-3"
+            @onclick="CreateUser">
+        Create User
+    </button>
+
+    <hr />
+
+    <h4>Create Teacher Account</h4>
+
+    <div class="row">
+
+        <div class="col-md-4">
+
+            <label>Teacher</label>
+
+            <select class="form-select"
+                    @bind="SelectedTeacherId">
+
+                <option value="0">
+                    Select teacher
+                </option>
+
+                @foreach (var teacher in Teachers)
+                {
+                    <option value="@teacher.Id">
+                        @teacher.Name
+                    </option>
+                }
+
+            </select>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <label>Email</label>
+
+            <input class="form-control"
+                   @bind="TeacherEmail" />
+
+        </div>
+
+        <div class="col-md-4">
+
+            <label>Password</label>
+
+            <input type="password"
+                   class="form-control"
+                   @bind="TeacherPassword" />
+
+        </div>
+
+    </div>
+
+    <button class="btn btn-primary mt-3"
+            @onclick="CreateTeacherAccount">
+        Create Teacher Account
+    </button>
+
+    <hr />
+
+    <div class="btn-group mb-3">
+
+        <button class="btn btn-outline-primary"
+                @onclick='() => SelectedRole = "All"'>
+            All
+        </button>
+
+        <button class="btn btn-outline-primary"
+                @onclick='() => SelectedRole = "Student"'>
+            Students
+        </button>
+
+        <button class="btn btn-outline-primary"
+                @onclick='() => SelectedRole = "Teacher"'>
+            Teachers
+        </button>
+
+        <button class="btn btn-outline-primary"
+                @onclick='() => SelectedRole = "Editor"'>
+            Editors
+        </button>
+
+        <button class="btn btn-outline-primary"
+                @onclick='() => SelectedRole = "Management"'>
+            Management
+        </button>
+
+        <button class="btn btn-outline-primary"
+                @onclick='() => SelectedRole = "Admin"'>
+            Admins
+        </button>
+
+    </div>
+
+    <table class="table table-bordered table-striped">
+
+        <thead>
+
             <tr>
-
-                <td>@user.Id</td>
-                <td>@user.Username</td>
-                <td>@user.Email</td>
-                <td>@user.Role</td>
-
-                <td>
-
-                    <button class="btn btn-danger btn-sm"
-                            @onclick="() => DeleteUser(user.Id)">
-                        Delete
-                    </button>
-
-                </td>
-
+                <th>Id</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
             </tr>
-        }
 
-    </tbody>
+        </thead>
 
-</table>
+        <tbody>
+
+            @foreach (var user in FilteredUsers)
+            {
+                <tr>
+
+                    <td>@user.Id</td>
+
+                    <td>
+
+                        @if (EditingUserId == user.Id)
+                        {
+                            <input class="form-control"
+                                   @bind="EditUsername" />
+                        }
+                        else
+                        {
+                            @user.Username
+                        }
+
+                    </td>
+
+                    <td>
+
+                        @if (EditingUserId == user.Id)
+                        {
+                            <input class="form-control"
+                                   @bind="EditEmail" />
+                        }
+                        else
+                        {
+                            @user.Email
+                        }
+
+                    </td>
+
+                    <td>
+
+                        @if (EditingUserId == user.Id)
+                        {
+                            <select class="form-select"
+                                    @bind="EditRole">
+
+                                <option>Student</option>
+                                <option>Teacher</option>
+                                <option>Editor</option>
+                                <option>Management</option>
+                                <option>Admin</option>
+
+                            </select>
+                        }
+                        else
+                        {
+                            @user.Role
+                        }
+
+                    </td>
+
+                    <td>
+
+                        @if (EditingUserId == user.Id)
+                        {
+                            <button class="btn btn-success btn-sm me-2"
+                                    @onclick="SaveUser">
+                                Save
+                            </button>
+
+                            <button class="btn btn-secondary btn-sm"
+                                    @onclick="CancelEdit">
+                                Cancel
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-warning btn-sm me-2"
+                                    @onclick="() => StartEdit(user)">
+                                Edit
+                            </button>
+
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => DeleteUser(user.Id)">
+                                Delete
+                            </button>
+                        }
+
+                    </td>
+
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+
+    @if (!string.IsNullOrWhiteSpace(Message))
+    {
+        <div class="alert alert-info">
+            @Message
+        </div>
+    }
+}
 
 @code {
+
     private List<UserInfo> Clients = new();
 
-    private IEnumerable<UserInfo> FilteredUsers => ActiveTab switch
-    {
-        0 => Clients.Where(x => x.Role == "Student"),
-        1 => Clients.Where(x => x.Role == "Teacher"),
-        2 => Clients.Where(x => x.Role == "Editor"),
-        3 => Clients.Where(x => x.Role == "Management"),
-        4 => Clients.Where(x => x.Role == "Admin"),
-        _ => Clients
-    };
+    private List<TeacherInfo> Teachers = new();
+
+    private RegisterRequest NewUser = new();
+
+    private string SelectedRole = "All";
+
+    private string Message = "";
+
+    private int EditingUserId;
+
+    private string EditUsername = "";
+    private string EditEmail = "";
+    private string EditRole = "";
+
+    private int SelectedTeacherId;
+
+    private string TeacherEmail = "";
+    private string TeacherPassword = "";
+
+    private IEnumerable<UserInfo> FilteredUsers =>
+        SelectedRole == "All"
+            ? Clients
+            : Clients.Where(x => x.Role == SelectedRole);
 
     protected override async Task OnInitializedAsync()
     {
-        if (!Session.IsAuthenticated ||
-            !Session.IsAdmin)
-        {
-            Navigation.NavigateTo("/");
-            return;
-        }
-
         await LoadUsers();
+
+        Teachers =
+            await ScheduleService.GetTeachersAsync();
     }
 
     private async Task LoadUsers()
     {
-        Clients = await UserService.GetUsersAsync();
+        Clients =
+            await UserService.GetUsersAsync();
+    }
+
+    private async Task CreateUser()
+    {
+        await UserService.CreateUserAsync(NewUser);
+
+        NewUser = new();
+
+        await LoadUsers();
+    }
+
+    private async Task CreateTeacherAccount()
+    {
+        var teacher =
+            Teachers.FirstOrDefault(
+                x => x.Id == SelectedTeacherId);
+
+        if (teacher == null)
+            return;
+
+        var request = new RegisterRequest
+        {
+            Username = teacher.Name,
+            Email = TeacherEmail,
+            Password = TeacherPassword,
+            Role = "Teacher"
+        };
+
+        await UserService.CreateUserAsync(request);
+
+        await LoadUsers();
+    }
+
+    private void StartEdit(UserInfo user)
+    {
+        EditingUserId = user.Id;
+
+        EditUsername = user.Username;
+        EditEmail = user.Email;
+        EditRole = user.Role;
+    }
+
+    private async Task SaveUser()
+    {
+        var request = new UpdateUserRequests
+        {
+            Username = EditUsername,
+            Email = EditEmail,
+            Role = EditRole
+        };
+
+        await UserService.UpdateUserAsync(
+            EditingUserId,
+            request);
+
+        EditingUserId = 0;
+
+        await LoadUsers();
+    }
+
+    private void CancelEdit()
+    {
+        EditingUserId = 0;
     }
 
     private async Task DeleteUser(int id)
