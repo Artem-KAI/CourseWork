@@ -31,6 +31,21 @@ namespace WebAPI.Controllers
             return string.Equals(user?.Role, "Admin", StringComparison.OrdinalIgnoreCase);
         }
 
+        [HttpPost]
+        public async Task<ActionResult> Create(CreateUserRequest request)
+        {
+            if (!await IsAdmin())
+                return Forbid();
+
+            await userManager.CreateUserAsync(
+                request.Username,
+                request.Email,
+                request.Password,
+                request.Role);
+
+            return Ok();
+        }
+
         [HttpGet]
         public async Task<ActionResult<IReadOnlyCollection<UserInfo>>> GetAll()
         {

@@ -1,15 +1,84 @@
 ﻿@page "/users"
 
+@using CONTRACT.DTO
+
 @inject UserSessionService Session
 @inject NavigationManager Navigation
+@inject ApiUserService UserService
+
+<table class="table table-striped">
+
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        @foreach (var user in FilteredUsers)
+        {
+            <tr>
+
+                <td>@user.Id</td>
+                <td>@user.Username</td>
+                <td>@user.Email</td>
+                <td>@user.Role</td>
+
+                <td>
+
+                    <button class="btn btn-danger btn-sm"
+                            @onclick="() => DeleteUser(user.Id)">
+                        Delete
+                    </button>
+
+                </td>
+
+            </tr>
+        }
+
+    </tbody>
+
+</table>
 
 @code {
+    private List<UserInfo> Clients = new();
 
-    protected override void OnInitialized()
+    private IEnumerable<UserInfo> FilteredUsers => ActiveTab switch
     {
-        if (!Session.IsAuthenticated || !Session.IsAdmin)
+        0 => Clients.Where(x => x.Role == "Student"),
+        1 => Clients.Where(x => x.Role == "Teacher"),
+        2 => Clients.Where(x => x.Role == "Editor"),
+        3 => Clients.Where(x => x.Role == "Management"),
+        4 => Clients.Where(x => x.Role == "Admin"),
+        _ => Clients
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Session.IsAuthenticated ||
+            !Session.IsAdmin)
         {
             Navigation.NavigateTo("/");
+            return;
         }
+
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        Clients = await UserService.GetUsersAsync();
+    }
+
+    private async Task DeleteUser(int id)
+    {
+        await UserService.DeleteUserAsync(id);
+
+        await LoadUsers();
     }
 }

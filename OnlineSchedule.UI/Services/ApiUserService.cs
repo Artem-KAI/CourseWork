@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Json;
+using UI.Models;
 using CONTRACT.DTO;
 
 namespace UI.Services
@@ -30,6 +31,15 @@ namespace UI.Services
             return client;
         }
 
+        public async Task CreateUserAsync(RegisterRequest request)
+        {
+            var client = CreateClient();
+
+            await client.PostAsJsonAsync(
+                "api/users",
+                request);
+        }
+
         public async Task<List<UserInfo>> GetUsersAsync()
         {
             var client = CreateClient();
@@ -44,6 +54,15 @@ namespace UI.Services
 
             return await client.GetFromJsonAsync<UserInfo>
                 ($"api/user/{id}");
+        }
+
+        public async Task UpdateUserAsync(int id, UserInfo user)
+        {
+            var client = CreateClient();
+
+            await client.PutAsJsonAsync(
+                $"api/users/{id}",
+                user);
         }
 
         public async Task DeleteUserAsync(int id)
