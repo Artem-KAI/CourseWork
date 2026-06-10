@@ -25,11 +25,6 @@
                     Login
                 </button>
 
-                <button class="btn btn-success"
-                        @onclick="GoToRegister">
-                    Register
-                </button>
-
             </div>
         }
         else
@@ -63,11 +58,6 @@
     private void GoToLogin()
     {
         Navigation.NavigateTo("/login");
-    }
-
-    private void GoToRegister()
-    {
-        Navigation.NavigateTo("/register");
     }
 
     private void GoToDashboard()
