@@ -2,9 +2,7 @@ using System;
 
 namespace BLL.Helpers;
 
-/// <summary>
-/// Допоміжний клас для строгої валідації та нормалізації наукових ступенів викладачів.
-/// </summary>
+
 public static class TeacherDegreeHelper
 {
     public static string ValidateAndNormalizeDegree(string degree)
